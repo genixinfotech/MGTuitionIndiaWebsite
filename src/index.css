@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --crimson: 0 100% 40%;
+    --crimson-dark: 0 100% 27%;
+    --crimson-light: 0 100% 65%;
+    --charcoal: 0 0% 18%;
+    --off-white: 0 0% 98%;
+    --whatsapp: 142 70% 49%;
+    --radius: 0.75rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply font-outfit bg-off-white text-charcoal antialiased;
+  }
+
+  ::selection {
+    @apply bg-crimson/20 text-crimson-dark;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass;
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-glass-lg;
+  }
+
+  .glass-crimson {
+    @apply bg-crimson/90 backdrop-blur-xl border border-white/20 shadow-glass-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-crimson px-6 py-3 text-sm font-semibold text-white
+      transition-all duration-300 hover:bg-crimson-dark hover:scale-[1.02] hover:shadow-glass-lg
+      active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crimson/40;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/40 bg-white/20 px-6 py-3 text-sm font-semibold text-white
+      backdrop-blur-md transition-all duration-300 hover:bg-white/30 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-crimson bg-transparent px-6 py-3 text-sm font-semibold text-crimson
+      transition-all duration-300 hover:bg-crimson hover:text-white hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .section-eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-crimson/15 bg-crimson/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-crimson;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-charcoal/10 bg-white/80 px-4 py-3 text-sm text-charcoal
+      backdrop-blur-sm placeholder:text-charcoal/40
+      transition-all duration-200 focus:border-crimson/40 focus:outline-none focus:ring-2 focus:ring-crimson/15;
+  }
+}
