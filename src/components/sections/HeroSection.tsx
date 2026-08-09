@@ -3,6 +3,8 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
 import { site } from '@/lib/site'
 
+const easeOut = [0.22, 1, 0.36, 1] as const
+
 const stagger = {
   hidden: {},
   show: {
@@ -15,7 +17,7 @@ const fadeUp = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.75, ease: easeOut },
   },
 }
 
@@ -29,7 +31,7 @@ export function HeroSection() {
         className="absolute inset-0"
         initial={{ scale: 1.08 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.8, ease: easeOut }}
       >
         <img
           src="/images/hero-bg.png"
