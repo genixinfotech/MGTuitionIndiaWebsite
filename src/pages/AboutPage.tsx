@@ -29,7 +29,7 @@ const values = [
     bgColor: 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white',
     lightColor: 'bg-emerald-100',
     title: 'Syllabus-first teaching',
-    text: 'CBSE, ICSE, and Kerala State Board — matched to your child\'s textbook, not generic worksheets.',
+    text: `${site.syllabusCoverage} — matched to your child's textbook, not generic worksheets.`,
   },
   {
     icon: Heart,
@@ -60,7 +60,7 @@ const timeline = [
   {
     year: 'Today',
     title: 'MG Tuition India',
-    text: 'Focused on CBSE, ICSE and Kerala State Board — very small batches, every session.',
+    text: `Focused on ${site.syllabusCoverage} — very small batches, every session.`,
   },
 ]
 
@@ -76,7 +76,7 @@ export function AboutPage() {
             IdealMG Educare — <HeroHighlight>tutoring with a conscience</HeroHighlight>
           </>
         }
-        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around Indian boards in very small batches."
+        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around all major Indian syllabi in very small batches."
       />
 
       {/* What we stand for */}
@@ -284,7 +284,7 @@ export function AboutPage() {
             </h2>
             <p className="mt-4 leading-relaxed text-charcoal/60">
               {site.legal} runs regional hubs in Kerala while delivering live small-batch classes to
-              students across India — CBSE, ICSE, and Kerala State Board.
+              students across India — {site.syllabusCoverage}.
             </p>
             <button
               type="button"

@@ -36,7 +36,7 @@ export const boardThemes: Record<
     glow: 'group-hover:shadow-[0_24px_48px_-16px_rgba(124,58,237,0.45)]',
     check: 'bg-violet-500',
   },
-  kerala: {
+  state: {
     icon: Landmark,
     gradient: 'from-[#059669] via-[#0d9488] to-[#14b8a6]',
     soft: 'bg-emerald-50',

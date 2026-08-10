@@ -46,7 +46,7 @@ export function WhyChooseUsPage() {
             Personal tutoring that respects <HeroHighlight>your child&apos;s pace</HeroHighlight>
           </>
         }
-        description="Curriculum-aligned. Progress-tracked. Designed for Indian boards from our Kerala hubs."
+        description="Curriculum-aligned. Progress-tracked. Designed for all major Indian syllabi from our Kerala hubs."
       />
 
       <section className="mx-auto max-w-7xl px-4 py-12 md:px-6">
@@ -80,7 +80,7 @@ export function WhyChooseUsPage() {
             <h2 className="text-2xl font-bold text-charcoal">What parents value most</h2>
             <ul className="mt-5 space-y-3">
               {[
-                'Tutors trained for CBSE, ICSE and Kerala State Board',
+                `Tutors trained for ${site.syllabusCoverage}`,
                 'Honest diagnostics before a long commitment',
                 'Subjects that matter: Maths, Science, English and more',
                 `Operated by ${site.legal}`,

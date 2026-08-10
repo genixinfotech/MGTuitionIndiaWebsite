@@ -1,6 +1,6 @@
 # MG Tuition India
 
-Small-batch live online tuition marketing site for Indian boards (CBSE, ICSE, Kerala State).
+Small-batch live online tuition marketing site for all major Indian syllabi (CBSE, ICSE, State Boards).
 
 Built with Vite, React, TypeScript, Tailwind CSS, and Framer Motion.
 

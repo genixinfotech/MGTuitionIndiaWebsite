@@ -13,6 +13,7 @@ import {
 import { PageShell } from '@/components/layout/PageShell'
 import { HeroHighlight, PageHero } from '@/components/layout/PageHero'
 import { submitTutor } from '@/lib/email'
+import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 const perks = [
@@ -32,7 +33,7 @@ const perks = [
     lightColor: 'bg-emerald-100',
     iconColor: 'text-emerald-600',
     title: 'Steady student demand',
-    description: 'Consistent batches across CBSE, ICSE, and Kerala State Board from Class 6 upward.',
+    description: `Consistent batches across ${site.syllabusCoverage} from Class 6 upward.`,
   },
   {
     icon: GraduationCap,
@@ -221,7 +222,7 @@ export function BecomeTutorPage() {
                 <ul className="mt-6 space-y-3">
                   {[
                     'Very small batches — real impact per student',
-                    'CBSE, ICSE & Kerala board classes',
+                    `${site.syllabusCoverage} classes`,
                     'Support from Cherthala & Kottayam hubs',
                   ].map((line) => (
                     <li key={line} className="flex items-start gap-2.5 text-sm text-white/90">

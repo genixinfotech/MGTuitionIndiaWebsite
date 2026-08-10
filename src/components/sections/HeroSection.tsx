@@ -108,7 +108,7 @@ export function HeroSection() {
             variants={fadeUp}
             className="mt-5 text-xl font-medium text-white/90 sm:text-2xl md:text-3xl"
           >
-            Small-batch live tuition for CBSE, ICSE &amp; Kerala boards
+            Small-batch live tuition for {site.syllabusCoverage}
           </motion.h1>
 
           <motion.p

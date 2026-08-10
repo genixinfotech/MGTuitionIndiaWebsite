@@ -64,7 +64,7 @@ export function Footer() {
                 Book a free trial — see the difference live
               </p>
               <p className="mt-2 text-sm text-white/60">
-                Very small batches for CBSE, ICSE &amp; Kerala State Board. No commitment required.
+                Very small batches for {site.syllabusCoverage}. No commitment required.
               </p>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">

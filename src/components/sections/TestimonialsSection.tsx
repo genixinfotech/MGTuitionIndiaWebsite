@@ -11,7 +11,7 @@ const testimonials = [
   {
     name: 'Rajesh K.',
     place: 'Thiruvananthapuram',
-    subject: 'Kerala SSLC',
+    subject: 'State Board (SSLC)',
     text: 'Clear updates after every week. We finally knew exactly where our son stood before the board exams.',
   },
   {
