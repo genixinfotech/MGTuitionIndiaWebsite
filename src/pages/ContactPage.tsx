@@ -31,7 +31,7 @@ export function ContactPage() {
             We&apos;d love to <HeroHighlight>hear from you</HeroHighlight>
           </>
         }
-        description="Questions about boards, scheduling, or trials — send a message or WhatsApp us."
+        description="Questions about boards, scheduling, or assessments — send a message or WhatsApp us."
       />
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pt-12 pb-20 lg:grid-cols-2 md:px-6">

@@ -76,9 +76,9 @@ export function TrialModal() {
               <X className="h-5 w-5" />
             </button>
 
-            <p className="section-eyebrow mb-3">Free trial</p>
+            <p className="section-eyebrow mb-3">Free assessment</p>
             <h2 id="trial-title" className="text-2xl font-bold text-charcoal">
-              Book a live demo class
+              Request your free assessment
             </h2>
             <p className="mt-1 text-sm text-charcoal/60">
               Tell us about your child — we&apos;ll match a tutor for {site.brand}.
@@ -134,7 +134,7 @@ export function TrialModal() {
                 <option value="">Select tuition plan</option>
                 {tuitionPlans.map((p) => (
                   <option key={p.grade} value={p.grade}>
-                    {p.grade} — {formatInr(p.offer)}/mo offer
+                    {p.grade} — {formatInr(p.rate)}/mo
                   </option>
                 ))}
               </select>
@@ -159,7 +159,7 @@ export function TrialModal() {
                 ) : status === 'done' ? (
                   'Opening email…'
                 ) : (
-                  'Request free trial'
+                  site.assessmentCta
                 )}
               </button>
             </form>

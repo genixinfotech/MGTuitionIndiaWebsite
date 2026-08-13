@@ -61,7 +61,7 @@ export function Footer() {
                 Get started
               </p>
               <p className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">
-                Book a free trial — see the difference live
+                Get a free assessment — see the difference live
               </p>
               <p className="mt-2 text-sm text-white/60">
                 Very small batches for {site.syllabusCoverage}. No commitment required.
@@ -73,7 +73,7 @@ export function Footer() {
                 onClick={() => openTrial()}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-crimson transition-colors hover:bg-white/90"
               >
-                Book Free Trial
+                {site.assessmentCta}
                 <ArrowRight className="h-4 w-4" />
               </button>
               <a

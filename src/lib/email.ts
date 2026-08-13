@@ -44,7 +44,7 @@ export async function submitTrial(data: TrialPayload): Promise<{ ok: true }> {
     .filter(Boolean)
     .join('\n')
 
-  window.location.href = buildMailto('Free Trial Request — MG Tuition India', body)
+  window.location.href = buildMailto('Free Assessment Request — MG Tuition India', body)
   return { ok: true }
 }
 

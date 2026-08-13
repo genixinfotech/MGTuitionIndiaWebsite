@@ -76,7 +76,7 @@ export function AboutPage() {
             IdealMG Educare — <HeroHighlight>tutoring with a conscience</HeroHighlight>
           </>
         }
-        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around all major Indian syllabi in very small batches."
+        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around CBSE, ICSE and Kerala State Board in very small batches."
       />
 
       {/* What we stand for */}
@@ -291,7 +291,7 @@ export function AboutPage() {
               onClick={() => openTrial()}
               className="btn-primary mt-8 inline-flex"
             >
-              Book Trial Class
+              {site.assessmentCta}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -306,7 +306,7 @@ export function AboutPage() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
           <h3 className="relative text-2xl font-bold md:text-3xl">Ready to see the difference?</h3>
           <p className="relative mx-auto mt-3 max-w-md text-white/75">
-            Book a free trial class — no commitment, just a live session with a tutor matched to
+            Get a free assessment — no commitment, just a live session with a tutor matched to
             your child&apos;s board.
           </p>
           <button
@@ -314,7 +314,7 @@ export function AboutPage() {
             onClick={() => openTrial()}
             className="relative mt-6 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-crimson transition-all hover:scale-[1.02] hover:shadow-lg"
           >
-            Book Trial Class
+            {site.assessmentCta}
             <ArrowRight className="h-4 w-4" />
           </button>
         </motion.div>

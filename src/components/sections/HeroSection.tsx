@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
 import { site } from '@/lib/site'
+import { cn } from '@/lib/utils'
 
 const easeOut = [0.22, 1, 0.36, 1] as const
 
@@ -21,8 +23,9 @@ const fadeUp = {
   },
 }
 
-export function HeroSection() {
+export function HeroSection({ aside }: { aside?: ReactNode }) {
   const { openTrial } = useTrial()
+  const split = Boolean(aside)
 
   return (
     <section className="relative min-h-[100svh] overflow-hidden bg-[#12080a] text-white">
@@ -42,7 +45,12 @@ export function HeroSection() {
 
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-[#0a0608]/55" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0608]/92 via-[#12080a]/78 to-[#12080a]/35" />
+      <div
+        className={cn(
+          'absolute inset-0 bg-gradient-to-r from-[#0a0608]/92 via-[#12080a]/78',
+          split ? 'to-[#12080a]/55' : 'to-[#12080a]/35',
+        )}
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0608]/90 via-[#12080a]/25 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-br from-crimson/20 via-transparent to-transparent" />
       <div
@@ -73,12 +81,19 @@ export function HeroSection() {
         className="pointer-events-none absolute left-1/3 top-0 h-64 w-[32rem] rounded-full bg-[radial-gradient(ellipse,rgba(255,77,77,0.2)_0%,transparent_70%)] blur-3xl"
       />
 
-      <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-end px-4 pb-20 pt-36 md:justify-center md:px-6 md:pb-24 md:pt-28">
+      <div className="relative mx-auto flex min-h-[100svh] max-w-7xl items-center px-4 pb-10 pt-20 sm:pt-[6.75rem] md:px-6 md:pt-[7.5rem]">
+        <div
+          className={cn(
+            'w-full',
+            split &&
+              'grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(340px,440px)] lg:gap-12',
+          )}
+        >
         <motion.div
           variants={stagger}
           initial="hidden"
           animate="show"
-          className="max-w-2xl"
+          className={split ? 'max-w-xl' : 'max-w-2xl'}
         >
           <motion.p
             variants={fadeUp}
@@ -90,7 +105,12 @@ export function HeroSection() {
 
           <motion.p
             variants={fadeUp}
-            className="font-outfit text-4xl font-extrabold tracking-tight whitespace-nowrap sm:text-5xl md:text-6xl lg:text-7xl"
+            className={cn(
+              'font-outfit font-extrabold tracking-tight',
+              split
+                ? 'text-4xl sm:text-5xl xl:text-6xl'
+                : 'whitespace-nowrap text-4xl sm:text-5xl md:text-6xl lg:text-7xl',
+            )}
           >
             <span className="bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent">
               {site.brand}{' '}
@@ -116,15 +136,14 @@ export function HeroSection() {
             className="mt-4 max-w-lg text-base text-white/70 sm:text-lg"
           >
             Expert tutors. Personal attention.{' '}
-            <span className="font-semibold text-white">Get a Free Trial...</span> so you can see the
-            difference before you commit.
+            <span className="font-semibold text-white">Book a Free Assessment</span>
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-6">
             {[
-              { value: '8', label: 'Sessions / month' },
-              { value: 'Max 6', label: 'Students / batch' },
-              { value: 'Free', label: 'Trial class' },
+              { value: '8–12', label: 'Sessions / month' },
+              { value: '6–8', label: 'Students / batch' },
+              { value: 'Free', label: 'Assessment' },
             ].map((item) => (
               <div key={item.label}>
                 <p className="text-2xl font-extrabold text-crimson-light">{item.value}</p>
@@ -135,7 +154,7 @@ export function HeroSection() {
             ))}
           </motion.div>
 
-          <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
+          <motion.div variants={fadeUp} className="mt-8">
             <motion.button
               type="button"
               whileHover={{ scale: 1.04, y: -2 }}
@@ -149,38 +168,42 @@ export function HeroSection() {
                 animate={{ x: ['-150%', '150%'] }}
                 transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
               />
-              <span className="relative">Book free trial</span>
+              <span className="relative">{site.assessmentCta}</span>
               <ArrowRight className="relative h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </motion.button>
-
-            <motion.a
-              href="#boards"
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:border-white/50 hover:bg-white/20"
-            >
-              Explore boards
-            </motion.a>
           </motion.div>
         </motion.div>
+
+        {aside ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.2, ease: easeOut }}
+            className="relative z-10 w-full"
+          >
+            {aside}
+          </motion.div>
+        ) : null}
+        </div>
       </div>
 
-      {/* Scroll hint */}
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.4 }}
-        className="absolute bottom-20 left-1/2 hidden -translate-x-1/2 md:block"
-      >
+      {!split ? (
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="flex h-10 w-6 items-start justify-center rounded-full border border-white/25 p-1.5"
+          aria-hidden
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4 }}
+          className="absolute bottom-20 left-1/2 hidden -translate-x-1/2 md:block"
         >
-          <motion.div className="h-2 w-1 rounded-full bg-white/60" />
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex h-10 w-6 items-start justify-center rounded-full border border-white/25 p-1.5"
+          >
+            <motion.div className="h-2 w-1 rounded-full bg-white/60" />
+          </motion.div>
         </motion.div>
-      </motion.div>
+      ) : null}
     </section>
   )
 }

@@ -1,12 +1,18 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles, Tag } from 'lucide-react'
+import { ArrowRight, CalendarDays, Sparkles, Users } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
-import { formatInr, parseGradeLabel, tuitionPlans } from '@/lib/tuition-plans'
+import {
+  batchSizeLabel,
+  formatInr,
+  formatSessionsLabel,
+  parseGradeLabel,
+  tuitionPlans,
+} from '@/lib/tuition-plans'
+import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
-function savings(rate: number, offer: number) {
-  return rate - offer
-}
+const planCols =
+  'md:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_14rem]'
 
 function GradeLabel({ grade, className }: { grade: string; className?: string }) {
   const parts = parseGradeLabel(grade)
@@ -32,42 +38,28 @@ export function TuitionPlansSection() {
       className="relative overflow-hidden px-4 py-24 text-white md:px-6 md:py-32"
       style={{
         background:
-          'linear-gradient(145deg, #1a060a 0%, #4a0c16 28%, #9b1020 52%, #c41e3a 72%, #2a0a12 100%)',
+          'linear-gradient(160deg, #070b16 0%, #0c1730 32%, #132a4a 58%, #0a1628 82%, #071018 100%)',
       }}
     >
-      {/* Layered glow mesh */}
       <div className="pointer-events-none absolute inset-0">
         <div
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 70% 55% at 12% 18%, rgba(255, 90, 70, 0.55), transparent 60%), radial-gradient(ellipse 55% 50% at 88% 78%, rgba(255, 180, 80, 0.28), transparent 55%), radial-gradient(ellipse 50% 40% at 50% 100%, rgba(255, 255, 255, 0.12), transparent 50%)',
+              'radial-gradient(ellipse 70% 55% at 10% 12%, rgba(56, 189, 248, 0.22), transparent 58%), radial-gradient(ellipse 55% 50% at 90% 80%, rgba(99, 102, 241, 0.28), transparent 55%), radial-gradient(ellipse 45% 40% at 50% 100%, rgba(255, 255, 255, 0.08), transparent 50%)',
           }}
         />
         <motion.div
           aria-hidden
           animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.08, 1] }}
           transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -left-16 top-8 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(255,120,100,0.55)_0%,transparent_70%)] blur-2xl"
+          className="absolute -left-16 top-8 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,0.28)_0%,transparent_70%)] blur-2xl"
         />
         <motion.div
           aria-hidden
           animate={{ x: [0, -24, 0], y: [0, 28, 0], scale: [1, 1.12, 1] }}
           transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -right-20 bottom-0 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(255,200,120,0.35)_0%,transparent_70%)] blur-2xl"
-        />
-        <motion.div
-          aria-hidden
-          animate={{ opacity: [0.4, 0.7, 0.4] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute left-1/2 top-1/3 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(255,255,255,0.18)_0%,transparent_70%)] blur-3xl"
-        />
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            background:
-              'linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.12) 48%, transparent 62%)',
-          }}
+          className="absolute -right-20 bottom-0 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(129,140,248,0.32)_0%,transparent_70%)] blur-2xl"
         />
         <div
           className="absolute inset-0 opacity-[0.12] mix-blend-overlay"
@@ -85,30 +77,19 @@ export function TuitionPlansSection() {
           viewport={{ once: true }}
           className="mx-auto max-w-2xl text-center"
         >
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-crimson/30 bg-crimson/15 px-3.5 py-1.5 text-sm font-semibold uppercase tracking-wider text-crimson-light">
-            <Sparkles className="h-4 w-4" />
+          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-sm font-semibold uppercase tracking-wider text-white/90 backdrop-blur-md">
+            <Sparkles className="h-4 w-4 text-sky-300" />
             Tuition plans
           </p>
           <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
             Simple pricing.{' '}
-            <span className="bg-gradient-to-r from-white via-rose-100 to-crimson-light bg-clip-text text-transparent">
-              Limited offer.
+            <span className="bg-gradient-to-r from-white via-sky-100 to-indigo-300 bg-clip-text text-transparent">
+              Per month.
             </span>
           </h2>
           <p className="mt-5 text-xl text-white/65">
             Transparent monthly fees for live classes in very small batches — no hidden charges.
           </p>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="mt-7 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-500/20 to-rose-500/20 px-5 py-2.5 text-base font-semibold text-amber-200"
-          >
-            <Tag className="h-4 w-4" />
-            Limited Period Offer — save up to ₹500 / month
-          </motion.div>
         </motion.div>
 
         <motion.div
@@ -116,130 +97,110 @@ export function TuitionPlansSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5 }}
-          className="mt-14 overflow-hidden rounded-[28px] bg-white shadow-[0_24px_64px_-12px_rgba(0,0,0,0.45)] ring-1 ring-black/5"
+          className="mt-14 rounded-[32px] border border-white/15 bg-black/25 p-3 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-xl md:p-5"
         >
-          {/* Desktop / tablet table */}
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[800px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-charcoal/10 bg-slate-50">
-                  <th className="px-5 py-5 text-sm font-bold uppercase tracking-[0.12em] text-charcoal/50">
-                    Grade / Class
-                  </th>
-                  <th className="px-5 py-5 text-sm font-bold uppercase tracking-[0.12em] text-charcoal/50">
-                    Sessions / Month
-                  </th>
-                  <th className="px-5 py-5 text-sm font-bold uppercase tracking-[0.12em] text-charcoal/50">
-                    Students / Batch
-                  </th>
-                  <th className="px-5 py-5 text-sm font-bold uppercase tracking-[0.12em] text-charcoal/50">
-                    Rate
-                  </th>
-                  <th className="px-5 py-5 text-sm font-bold uppercase tracking-[0.12em] text-charcoal/50">
-                    Discount Rate
-                  </th>
-                  <th className="px-5 py-5 text-right text-sm font-bold uppercase tracking-[0.12em] text-charcoal/50">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tuitionPlans.map((plan, i) => (
-                  <tr
-                    key={plan.grade}
-                    className={cn(
-                      'group border-b border-charcoal/[0.06] last:border-b-0',
-                      'hover:[background:linear-gradient(90deg,#1e3a8a_0%,#4c1d95_50%,#6b21a8_100%)]',
-                      i % 2 === 1 && 'bg-slate-50/70',
-                    )}
-                  >
-                    <td className="px-5 py-5">
-                      <GradeLabel
-                        grade={plan.grade}
-                        className="text-lg font-semibold text-charcoal group-hover:text-white"
-                      />
-                    </td>
-                    <td className="px-5 py-5">
-                      <span className="inline-flex items-center rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-base font-medium text-charcoal/75 group-hover:border-white/25 group-hover:bg-white/15 group-hover:text-white">
-                        {plan.sessions} sessions
-                      </span>
-                    </td>
-                    <td className="px-5 py-5">
-                      <span className="text-lg font-semibold tabular-nums text-charcoal group-hover:text-white">
-                        Max {plan.studentsPerBatch}
-                      </span>
-                    </td>
-                    <td className="px-5 py-5">
-                      <span className="text-lg font-medium text-charcoal/40 line-through decoration-charcoal/35 group-hover:text-white/50 group-hover:decoration-white/50">
-                        {formatInr(plan.rate)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-2xl font-extrabold tabular-nums text-crimson group-hover:text-white">
-                          {formatInr(plan.offer)}
-                        </span>
-                        <span className="text-sm font-semibold text-emerald-600 group-hover:text-emerald-200">
-                          Save {formatInr(savings(plan.rate, plan.offer))}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openTrial({ plan: plan.grade })}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-crimson px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-crimson/25 group-hover:!bg-white group-hover:!text-indigo-900 group-hover:shadow-white/20 hover:scale-[1.03] hover:bg-crimson-dark group-hover:hover:!bg-white/90"
-                      >
-                        Book Trial
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div className={cn('hidden gap-x-4 gap-y-2.5 md:grid', planCols)}>
+            <div className="col-span-5 grid grid-cols-subgrid px-5 py-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Grade / Class
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Sessions / month
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Students / batch
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Rate</p>
+              <p className="text-right text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Action
+              </p>
+            </div>
 
-          {/* Mobile stacked cards */}
-          <div className="divide-y divide-charcoal/[0.08] md:hidden">
             {tuitionPlans.map((plan, i) => (
-              <div
+              <motion.div
                 key={plan.grade}
-                className={cn(
-                  'group p-6 hover:bg-gradient-to-r hover:from-[#1e3a8a] hover:to-[#6b21a8]',
-                  i % 2 === 1 && 'bg-slate-50/80',
-                )}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.04, duration: 0.4 }}
+                className="group relative col-span-5 grid grid-cols-subgrid items-center overflow-hidden rounded-[22px] bg-white/[0.07] px-5 py-4 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:shadow-[0_16px_40px_-12px_rgba(204,0,0,0.65)] hover:ring-white/25"
               >
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.22),transparent_40%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                />
+
                 <GradeLabel
                   grade={plan.grade}
-                  className="text-xl font-bold text-charcoal group-hover:text-white"
+                  className="relative text-base font-semibold text-white"
                 />
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-base text-charcoal/60 group-hover:text-white/80">
-                  <span>{plan.sessions} sessions / month</span>
-                  <span>Max {plan.studentsPerBatch} students / batch</span>
-                </div>
-                <div className="mt-5 flex items-end justify-between gap-3">
-                  <span className="text-base font-medium text-charcoal/40 line-through group-hover:text-white/50">
+
+                <span className="relative inline-flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-sm font-medium text-white/80 transition-colors group-hover:border-white/20 group-hover:bg-white/20 group-hover:text-white">
+                  <CalendarDays className="h-3.5 w-3.5 opacity-80" />
+                  {formatSessionsLabel(plan)}
+                </span>
+
+                <span className="relative inline-flex items-center gap-1.5 text-base font-semibold tabular-nums text-white">
+                  <Users className="h-4 w-4 text-white/50 transition-colors group-hover:text-white/80" />
+                  {batchSizeLabel}
+                </span>
+
+                <div className="relative">
+                  <p className="font-outfit text-2xl font-extrabold tabular-nums text-white">
                     {formatInr(plan.rate)}
+                  </p>
+                  <p className="text-xs text-white/40 transition-colors group-hover:text-white/70">
+                    per month
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => openTrial({ plan: plan.grade })}
+                  className="relative inline-flex justify-self-end items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.03] group-hover:border-transparent group-hover:bg-white group-hover:text-crimson group-hover:shadow-lg group-hover:shadow-black/10"
+                >
+                  {site.assessmentCta}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="space-y-2.5 md:hidden">
+            {tuitionPlans.map((plan, i) => (
+              <motion.div
+                key={plan.grade}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.04, duration: 0.4 }}
+                className="group relative overflow-hidden rounded-[22px] bg-white/[0.07] p-5 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:ring-white/25"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <GradeLabel grade={plan.grade} className="text-lg font-bold text-white" />
+                  <p className="font-outfit text-2xl font-extrabold tabular-nums">
+                    {formatInr(plan.rate)}
+                  </p>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 text-sm text-white/75">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 group-hover:bg-white/20">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {formatSessionsLabel(plan)}
                   </span>
-                  <div className="text-right">
-                    <p className="text-3xl font-extrabold tabular-nums text-crimson group-hover:text-white">
-                      {formatInr(plan.offer)}
-                    </p>
-                    <p className="text-sm font-semibold text-emerald-600 group-hover:text-emerald-200">
-                      Save {formatInr(savings(plan.rate, plan.offer))}
-                    </p>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 group-hover:bg-white/20">
+                    <Users className="h-3.5 w-3.5" />
+                    {batchSizeLabel} / batch
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => openTrial({ plan: plan.grade })}
-                  className="btn-primary mt-5 w-full text-base group-hover:!bg-white group-hover:!text-indigo-900 group-hover:hover:!bg-white/90"
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white group-hover:border-transparent group-hover:bg-white group-hover:text-crimson"
                 >
-                  Book Trial
+                  {site.assessmentCta}
                   <ArrowRight className="h-4 w-4" />
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
@@ -251,11 +212,11 @@ export function TuitionPlansSection() {
           className="mt-10 flex flex-col items-center gap-4 text-center"
         >
           <p className="max-w-lg text-base text-white/55">
-            Prices are monthly, per subject path in very small batches. Offer rates apply while the
-            limited period is live.
+            Prices are monthly, per subject path in very small batches of {batchSizeLabel} students.
+            Grades 9–12 include 8–12 sessions per month.
           </p>
           <button type="button" onClick={() => openTrial()} className="btn-primary text-base">
-            Book free trial
+            {site.assessmentCta}
             <ArrowRight className="h-4 w-4" />
           </button>
         </motion.div>

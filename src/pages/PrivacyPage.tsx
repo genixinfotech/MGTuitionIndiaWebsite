@@ -22,7 +22,7 @@ export function PrivacyPage() {
 
           <h2 className="text-xl font-bold text-charcoal">Information we collect</h2>
           <p>
-            When you book a trial, contact us, or apply as a tutor, we may collect your name, email
+            When you request an assessment, contact us, or apply as a tutor, we may collect your name, email
             address, phone number, board/subject preferences, and any message you send. We also
             collect basic technical data such as browser type and pages visited via standard web
             logs.
@@ -30,7 +30,7 @@ export function PrivacyPage() {
 
           <h2 className="text-xl font-bold text-charcoal">How we use information</h2>
           <ul className="list-disc space-y-1 pl-5">
-            <li>To respond to enquiries and schedule trial or paid sessions</li>
+            <li>To respond to enquiries and schedule assessments or paid sessions</li>
             <li>To match students with suitable tutors</li>
             <li>To process tutor applications</li>
             <li>To improve our website and services</li>

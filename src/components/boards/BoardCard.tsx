@@ -15,65 +15,124 @@ type BoardCardProps = {
 export function BoardCard({ board, index = 0, onBookTrial }: BoardCardProps) {
   const theme = boardThemes[board.id]
   const Icon = theme.icon
+  const topics = board.topics.slice(0, 3)
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ delay: index * 0.08, duration: 0.45 }}
+      transition={{ delay: index * 0.1, duration: 0.5 }}
       className={cn(
-        'group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-lg ring-1 transition-all duration-300 hover:-translate-y-1.5',
+        'group relative flex h-full flex-col rounded-[28px] bg-white shadow-lg ring-1 transition-all duration-500 hover:-translate-y-2',
         theme.ring,
         theme.shadow,
         theme.glow,
       )}
     >
-      <div className={cn('relative bg-gradient-to-br px-7 pb-8 pt-7 text-white', theme.gradient)}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-        <div className="relative flex items-start justify-between">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-            <Icon className="h-6 w-6" />
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-t-[28px] bg-gradient-to-br px-7 pb-12 pt-7 text-white',
+          theme.gradient,
+        )}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.18]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px)',
+            backgroundSize: '22px 22px',
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,rgba(255,255,255,0.28),transparent_42%)]" />
+        <div
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-125',
+            theme.orb,
+          )}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-10 left-8 h-28 w-28 rounded-full bg-white/10 blur-2xl"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-7 -right-1 select-none font-outfit text-[6.5rem] font-black leading-none tracking-tighter text-white/[0.14] transition-transform duration-500 group-hover:scale-110"
+        >
+          {theme.mark}
+        </span>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"
+        />
+
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-inner shadow-white/10 backdrop-blur-md transition-transform duration-500 group-hover:rotate-3 group-hover:scale-105">
+            <Icon className="h-7 w-7" />
           </div>
-          <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm">
-            {board.tag}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] backdrop-blur-md">
+              {board.tag}
+            </span>
+            <span className="font-outfit text-xs font-semibold tabular-nums text-white/55">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          </div>
         </div>
-        <h3 className="relative mt-5 text-2xl font-bold">{board.name}</h3>
-        <p className="relative mt-1 text-sm font-medium text-white/80">{board.levels}</p>
+
+        <p className="relative mt-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/65">
+          Indian syllabus
+        </p>
+        <h3 className="relative mt-1.5 font-outfit text-3xl font-extrabold tracking-tight">
+          {board.name}
+        </h3>
+        <p className="relative mt-1.5 text-sm font-medium text-white/80">{board.levels}</p>
+        <span className="relative mt-4 block h-1 w-12 rounded-full bg-white/50 transition-all duration-500 group-hover:w-20" />
       </div>
 
-      <div className="flex flex-1 flex-col px-7 pb-7 pt-6">
-        <div className="flex-1">
-          <p className="text-sm leading-relaxed text-charcoal/60">{board.description}</p>
+      <div className="relative -mt-5 flex flex-1 flex-col rounded-[24px] bg-white px-7 pb-7 pt-7">
+        <p className="text-sm leading-relaxed text-charcoal/60">{board.description}</p>
 
-          <ul className="mt-5 space-y-2.5">
-            {board.topics.slice(0, 3).map((topic) => (
-              <li key={topic} className="flex gap-2.5 text-[13px] leading-snug text-charcoal/70">
+        <ul className="mt-6 flex-1 space-y-0">
+          {topics.map((topic, i) => (
+            <li key={topic} className="flex gap-3">
+              <span className="flex w-5 shrink-0 flex-col items-center">
                 <span
                   className={cn(
-                    'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white',
+                    'flex h-5 w-5 items-center justify-center rounded-full text-white shadow-sm',
                     theme.check,
                   )}
                 >
-                  <Check className="h-3 w-3" />
+                  <Check className="h-3 w-3" strokeWidth={3} />
                 </span>
+                {i < topics.length - 1 ? (
+                  <span className={cn('mt-1 w-px flex-1 opacity-25', theme.check)} />
+                ) : null}
+              </span>
+              <span
+                className={cn(
+                  'text-[13px] leading-snug text-charcoal/70',
+                  i < topics.length - 1 ? 'pb-3.5' : '',
+                )}
+              >
                 {topic}
-              </li>
-            ))}
-          </ul>
-        </div>
+              </span>
+            </li>
+          ))}
+        </ul>
 
         <button
           type="button"
           onClick={onBookTrial}
           className={cn(
-            'mt-8 inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-gradient-to-r px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg',
+            'mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r px-5 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:scale-[1.015] hover:shadow-lg',
             theme.gradient,
           )}
         >
-          Book Trial Class
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          {site.assessmentCta}
+          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
         </button>
       </div>
     </motion.article>
@@ -82,7 +141,7 @@ export function BoardCard({ board, index = 0, onBookTrial }: BoardCardProps) {
 
 export function BoardCardGrid({ onBookTrial }: { onBookTrial: () => void }) {
   return (
-    <div className="grid gap-6 md:grid-cols-3">
+    <div className="grid gap-7 md:grid-cols-3">
       {site.boards.map((board, i) => (
         <BoardCard key={board.id} board={board} index={i} onBookTrial={onBookTrial} />
       ))}

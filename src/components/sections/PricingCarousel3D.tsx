@@ -1,13 +1,16 @@
 import { useCallback, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
-import { formatInr, parseGradeLabel, tuitionPlans } from '@/lib/tuition-plans'
+import { site } from '@/lib/site'
+import {
+  batchSizeLabel,
+  formatInr,
+  formatSessionsLabel,
+  parseGradeLabel,
+  tuitionPlans,
+} from '@/lib/tuition-plans'
 import { cn } from '@/lib/utils'
-
-function savings(rate: number, offer: number) {
-  return rate - offer
-}
 
 function GradeLabel({ grade, className }: { grade: string; className?: string }) {
   const parts = parseGradeLabel(grade)
@@ -125,16 +128,12 @@ export function PricingCarousel3D() {
           <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
             Simple pricing.{' '}
             <span className="bg-gradient-to-r from-white via-rose-100 to-crimson-light bg-clip-text text-transparent">
-              Limited offer.
+              Per month.
             </span>
           </h2>
           <p className="mt-5 text-xl text-white/65">
             Browse monthly fees by class — swipe or use the arrows to compare.
           </p>
-          <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-500/20 to-rose-500/20 px-5 py-2.5 text-base font-semibold text-amber-200">
-            <Tag className="h-4 w-4" />
-            Limited Period Offer — save up to ₹500 / month
-          </div>
         </motion.div>
 
         <div className="relative mt-14 w-full">
@@ -210,23 +209,18 @@ export function PricingCarousel3D() {
 
                         <div className="mt-6 flex flex-wrap gap-2">
                           <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
-                            {plan.sessions} sessions / month
+                            {formatSessionsLabel(plan)} / month
                           </span>
                           <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
-                            Max {plan.studentsPerBatch} students
+                            {batchSizeLabel} students
                           </span>
                         </div>
 
                         <div className="mt-8 border-t border-charcoal/[0.08] pt-6">
-                          <p className="text-base font-medium text-charcoal/40 line-through">
-                            {formatInr(plan.rate)} / month
+                          <p className="text-4xl font-extrabold tabular-nums text-crimson md:text-5xl">
+                            {formatInr(plan.rate)}
                           </p>
-                          <p className="mt-2 text-4xl font-extrabold tabular-nums text-crimson md:text-5xl">
-                            {formatInr(plan.offer)}
-                          </p>
-                          <p className="mt-2 text-sm font-semibold text-emerald-600">
-                            Save {formatInr(savings(plan.rate, plan.offer))} with limited offer
-                          </p>
+                          <p className="mt-2 text-sm font-medium text-charcoal/50">per month</p>
                         </div>
 
                         <button
@@ -234,7 +228,7 @@ export function PricingCarousel3D() {
                           onClick={() => openTrial({ plan: plan.grade })}
                           className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-crimson px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-crimson/30 hover:bg-crimson-dark"
                         >
-                          Book Trial
+                          {site.assessmentCta}
                           <ArrowRight className="h-4 w-4" />
                         </button>
                       </>
@@ -259,9 +253,6 @@ export function PricingCarousel3D() {
                             Math.abs(offset) === 1 ? 'text-2xl md:text-3xl' : 'text-xl',
                           )}
                         >
-                          {formatInr(plan.offer)}
-                        </p>
-                        <p className="mt-1 text-xs font-medium text-charcoal/45 line-through md:text-sm">
                           {formatInr(plan.rate)}
                         </p>
                       </button>
@@ -300,7 +291,7 @@ export function PricingCarousel3D() {
             <span className="font-semibold text-white/75">
               <GradeLabel grade={activePlan.grade} />
             </span>{' '}
-            · {formatInr(activePlan.offer)}/month
+            · {formatInr(activePlan.rate)}/month
           </p>
         </div>
       </div>

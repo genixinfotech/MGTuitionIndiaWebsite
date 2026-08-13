@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { HeroHighlight, PageHero } from '@/components/layout/PageHero'
+import { TestimonialsSection } from '@/components/sections/TestimonialsSection'
+import { AboutTeaserSection } from '@/components/sections/AboutTeaserSection'
 import { useTrial } from '@/context/TrialContext'
 import { site } from '@/lib/site'
 
@@ -46,7 +48,7 @@ export function WhyChooseUsPage() {
             Personal tutoring that respects <HeroHighlight>your child&apos;s pace</HeroHighlight>
           </>
         }
-        description="Curriculum-aligned. Progress-tracked. Designed for all major Indian syllabi from our Kerala hubs."
+        description={`Curriculum-aligned. Progress-tracked. Designed for ${site.syllabusCoverage} from our Kerala hubs.`}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-12 md:px-6">
@@ -69,7 +71,11 @@ export function WhyChooseUsPage() {
         </div>
       </section>
 
-      <section className="px-4 py-12 md:px-6">
+      <TestimonialsSection />
+
+      <AboutTeaserSection />
+
+      <section className="px-4 py-12 md:px-6 md:pb-24">
         <div className="mx-auto grid max-w-7xl items-center gap-8 overflow-hidden rounded-3xl lg:grid-cols-2">
           <img
             src="/images/infopark-cherthala.jpg"
@@ -92,7 +98,7 @@ export function WhyChooseUsPage() {
               ))}
             </ul>
             <button type="button" onClick={() => openTrial()} className="btn-primary mt-8">
-              Experience a free class
+              {site.assessmentCta}
             </button>
           </div>
         </div>

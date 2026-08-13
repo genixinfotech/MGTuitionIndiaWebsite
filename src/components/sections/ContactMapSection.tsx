@@ -56,7 +56,7 @@ export function ContactMapSection() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" onClick={() => openTrial()} className="btn-primary">
-              Book free trial
+              {site.assessmentCta}
             </button>
             <a href={whatsappUrl()} target="_blank" rel="noreferrer" className="btn-outline">
               WhatsApp us

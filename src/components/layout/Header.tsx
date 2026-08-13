@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { useTrial } from '@/context/TrialContext'
+import { useAuth } from '@/context/AuthContext'
 
 function NavSecondaryButton({
   className,
@@ -13,9 +14,12 @@ function NavSecondaryButton({
   className?: string
   fullWidth?: boolean
 }) {
+  const { user } = useAuth()
+  const to = user ? '/portal' : '/login'
+
   return (
     <Link
-      to="/login"
+      to={to}
       className={cn(
         'group inline-flex items-center justify-center gap-2 rounded-full',
         'bg-crimson/[0.06] px-5 py-2.5 text-sm font-semibold text-crimson',
@@ -25,7 +29,7 @@ function NavSecondaryButton({
       )}
     >
       <LogIn className="h-3.5 w-3.5" />
-      Login
+      {user ? 'Portal' : 'Login'}
     </Link>
   )
 }
@@ -55,7 +59,7 @@ function NavTrialButton({
     >
       <span className="absolute inset-0 rounded-full bg-white/0 transition-colors duration-300 group-hover:bg-white/10" />
       <Sparkles className="relative h-3.5 w-3.5 text-crimson-light" />
-      <span className="relative">{fullWidth ? 'Book Free Trial' : 'Free Trial'}</span>
+      <span className="relative">{fullWidth ? site.assessmentCta : 'Assessment'}</span>
       <ArrowRight className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
     </button>
   )
@@ -99,12 +103,12 @@ export function Header() {
           scrolled && 'bg-white/90 shadow-lg shadow-charcoal/[0.06]',
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-3.5">
           <Link to="/" className="shrink-0 transition hover:opacity-90">
             <img
               src="/images/mg-tuition-logo.png"
               alt={site.name}
-              className="h-10 w-auto md:h-12"
+              className="h-12 w-auto md:h-14"
             />
           </Link>
 
