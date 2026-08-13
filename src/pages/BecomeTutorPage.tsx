@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { HeroHighlight, PageHero } from '@/components/layout/PageHero'
+import { FormDisclaimer } from '@/components/forms/FormDisclaimer'
+import { FormSuccess } from '@/components/forms/FormSuccess'
 import { submitTutor } from '@/lib/email'
 import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
@@ -63,6 +65,7 @@ const steps = [
 
 export function BecomeTutorPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -74,9 +77,15 @@ export function BecomeTutorPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
+    setError('')
     setStatus('loading')
-    await submitTutor(form)
-    setStatus('done')
+    try {
+      await submitTutor(form)
+      setStatus('done')
+    } catch (err) {
+      setStatus('idle')
+      setError(err instanceof Error ? err.message : 'Unable to send. Please try again.')
+    }
   }
 
   return (
@@ -249,6 +258,25 @@ export function BecomeTutorPage() {
                 </p>
               </div>
 
+              {status === 'done' ? (
+                <FormSuccess
+                  title="Application sent successfully"
+                  description="We’ve received your tutor application and will get back to you within a few working days."
+                  actionLabel="Submit another application"
+                  onAction={() => {
+                    setStatus('idle')
+                    setForm({
+                      name: '',
+                      email: '',
+                      phone: '',
+                      subjects: '',
+                      experience: '',
+                      message: '',
+                    })
+                  }}
+                />
+              ) : (
+                <>
               <div className="space-y-3">
                 <input
                   required
@@ -295,17 +323,25 @@ export function BecomeTutorPage() {
                 />
               </div>
 
+              {error ? (
+                <p className="mt-4 rounded-xl border border-crimson/20 bg-crimson/5 px-3 py-2 text-sm text-crimson">
+                  {error}
+                </p>
+              ) : null}
               <button type="submit" disabled={status !== 'idle'} className="btn-primary mt-6 w-full">
                 {status === 'loading' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Sending…
                   </>
-                ) : status === 'done' ? (
-                  'Opening email…'
                 ) : (
                   'Submit application'
                 )}
               </button>
+                </>
+              )}
+              <div className="mt-6">
+                <FormDisclaimer />
+              </div>
             </motion.form>
           </motion.div>
         </div>

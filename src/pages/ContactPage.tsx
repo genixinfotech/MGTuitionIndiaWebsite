@@ -1,13 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Loader2, Mail, MapPin, Phone } from 'lucide-react'
+import { Loader2, Mail, MapPin, MessageSquare, Phone, User } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { HeroHighlight, PageHero } from '@/components/layout/PageHero'
+import { FormDisclaimer } from '@/components/forms/FormDisclaimer'
+import { FormField, fieldClass } from '@/components/forms/FormField'
+import { FormSuccess } from '@/components/forms/FormSuccess'
 import { submitContact } from '@/lib/email'
 import { site, whatsappUrl } from '@/lib/site'
 
 export function ContactPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -17,9 +21,15 @@ export function ContactPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
+    setError('')
     setStatus('loading')
-    await submitContact(form)
-    setStatus('done')
+    try {
+      await submitContact(form)
+      setStatus('done')
+    } catch (err) {
+      setStatus('idle')
+      setError(err instanceof Error ? err.message : 'Unable to send. Please try again.')
+    }
   }
 
   return (
@@ -40,50 +50,76 @@ export function ContactPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           onSubmit={onSubmit}
-          className="glass space-y-3 rounded-3xl p-6 md:p-8"
+          className="glass space-y-4 rounded-3xl p-6 md:p-8"
         >
           <h2 className="text-xl font-bold text-charcoal">Send a message</h2>
-          <input
-            required
-            className="input-field"
-            placeholder="Your name"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
-          <input
-            required
-            type="email"
-            className="input-field"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-          />
-          <input
-            required
-            type="tel"
-            className="input-field"
-            placeholder="Phone"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-          />
-          <textarea
-            required
-            className="input-field min-h-[120px] resize-none"
-            placeholder="How can we help?"
-            value={form.message}
-            onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-          />
-          <button type="submit" disabled={status !== 'idle'} className="btn-primary w-full">
-            {status === 'loading' ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Sending…
-              </>
-            ) : status === 'done' ? (
-              'Opening email…'
-            ) : (
-              'Send message'
-            )}
-          </button>
+          {status === 'done' ? (
+            <FormSuccess
+              description="We’ve received your message and will get back to you shortly."
+              actionLabel="Send another message"
+              onAction={() => {
+                setStatus('idle')
+                setForm({ name: '', email: '', phone: '', message: '' })
+              }}
+            />
+          ) : (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="Your name" icon={User}>
+                  <input
+                    required
+                    className={fieldClass(true)}
+                    placeholder="Full name"
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  />
+                </FormField>
+                <FormField label="Email" icon={Mail}>
+                  <input
+                    required
+                    type="email"
+                    className={fieldClass(true)}
+                    placeholder="you@email.com"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  />
+                </FormField>
+              </div>
+              <FormField label="Phone" icon={Phone}>
+                <input
+                  required
+                  type="tel"
+                  className={fieldClass(true)}
+                  placeholder="WhatsApp preferred"
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                />
+              </FormField>
+              <FormField label="How can we help?" icon={MessageSquare} iconAlign="top">
+                <textarea
+                  required
+                  className={`${fieldClass(true)} min-h-[120px] resize-none`}
+                  placeholder="Your message"
+                  value={form.message}
+                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                />
+              </FormField>
+              {error ? (
+                <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-3 py-2 text-sm text-crimson">
+                  {error}
+                </p>
+              ) : null}
+              <button type="submit" disabled={status !== 'idle'} className="btn-primary w-full">
+                {status === 'loading' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Sending…
+                  </>
+                ) : (
+                  'Send message'
+                )}
+              </button>
+            </>
+          )}
           <a
             href={whatsappUrl('Hi, I have a question about MG Tuition India.')}
             target="_blank"
@@ -92,6 +128,7 @@ export function ContactPage() {
           >
             Or chat on WhatsApp
           </a>
+          <FormDisclaimer />
         </motion.form>
 
         <div className="space-y-4">

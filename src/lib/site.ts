@@ -117,6 +117,10 @@ export const site = {
     { label: 'Become a Tutor', path: '/become-tutor' },
     { label: 'Contact', path: '/contact' },
   ],
+  formDisclaimer:
+    'By submitting this form you agree to be contacted by MG Tuition about this enquiry. We use your details only to respond and do not sell personal data.',
+  footerDisclaimer:
+    'IdealMG Educare LLP provides live online tuition for Indian boards. An assessment or contact request does not create a tuition contract until enrolment is confirmed in writing.',
 } as const
 
 export function whatsappUrl(message?: string) {

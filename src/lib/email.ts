@@ -26,52 +26,35 @@ export type TutorPayload = {
   message?: string
 }
 
-function buildMailto(subject: string, body: string) {
-  return `mailto:${site.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-}
+async function postForm(kind: 'trial' | 'contact' | 'tutor', data: object): Promise<{ ok: true }> {
+  const response = await fetch('/api/email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ kind, data }),
+  })
 
-/** Opens a prefilled mailto — replace with a server endpoint when ready. */
-export async function submitTrial(data: TrialPayload): Promise<{ ok: true }> {
-  const body = [
-    `Name: ${data.name}`,
-    `Email: ${data.email}`,
-    `Phone: ${data.phone}`,
-    `Board: ${data.board}`,
-    data.plan ? `Plan: ${data.plan}` : null,
-    data.referral ? `Referral: ${data.referral}` : null,
-    data.message ? `Message: ${data.message}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n')
+  if (!response.ok) {
+    let message = `Unable to send your message to ${site.email}. Please try again.`
+    try {
+      const payload = (await response.json()) as { error?: string }
+      if (payload.error) message = payload.error
+    } catch {
+      // keep fallback
+    }
+    throw new Error(message)
+  }
 
-  window.location.href = buildMailto('Free Assessment Request — MG Tuition India', body)
   return { ok: true }
 }
 
-export async function submitContact(data: ContactPayload): Promise<{ ok: true }> {
-  const body = [
-    `Name: ${data.name}`,
-    `Email: ${data.email}`,
-    `Phone: ${data.phone}`,
-    `Message: ${data.message}`,
-  ].join('\n')
-
-  window.location.href = buildMailto('Contact — MG Tuition India', body)
-  return { ok: true }
+export function submitTrial(data: TrialPayload) {
+  return postForm('trial', data)
 }
 
-export async function submitTutor(data: TutorPayload): Promise<{ ok: true }> {
-  const body = [
-    `Name: ${data.name}`,
-    `Email: ${data.email}`,
-    `Phone: ${data.phone}`,
-    `Subjects: ${data.subjects}`,
-    `Experience: ${data.experience}`,
-    data.message ? `Message: ${data.message}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n')
+export function submitContact(data: ContactPayload) {
+  return postForm('contact', data)
+}
 
-  window.location.href = buildMailto('Tutor Application — MG Tuition India', body)
-  return { ok: true }
+export function submitTutor(data: TutorPayload) {
+  return postForm('tutor', data)
 }
