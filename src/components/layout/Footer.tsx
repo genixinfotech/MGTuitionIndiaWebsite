@@ -200,16 +200,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-white/10 py-8">
-          <p className="max-w-3xl text-xs leading-relaxed text-white/45">{site.footerDisclaimer}</p>
-          <div className="mt-4 grid gap-3 text-xs text-white/50 sm:grid-cols-2">
-            {site.offices.map((office) => (
-              <p key={office.id}>
-                <span className="font-semibold text-white/65">{office.label}:</span>{' '}
-                {office.lines.join(', ')}
-              </p>
-            ))}
-          </div>
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 text-center text-xs text-white/50 md:flex-row md:text-left">
+          <div className="flex flex-col items-center justify-between gap-3 text-center text-xs text-white/50 md:flex-row md:text-left">
             <p>
               © {year} {site.legal}. All rights reserved.
             </p>

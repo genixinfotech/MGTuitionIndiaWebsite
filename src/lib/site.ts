@@ -4,7 +4,7 @@ export const site = {
   legal: 'IdealMG Educare LLP',
   tagline: 'Small-Batch Live Tuition for Indian Boards',
   syllabusCoverage: 'CBSE, ICSE & Kerala State Board',
-  email: 'info@mgtuition.com',
+  email: 'info@mgtuition.in',
   // Update these when India numbers are confirmed
   phoneDisplay: '+91 98765 43210',
   phoneHref: 'tel:+919876543210',
@@ -119,7 +119,7 @@ export const site = {
   ],
   formDisclaimer:
     'By submitting this form you agree to be contacted by MG Tuition about this enquiry. We use your details only to respond and do not sell personal data.',
-  footerDisclaimer:
+  enrolmentDisclaimer:
     'IdealMG Educare LLP provides live online tuition for Indian boards. An assessment or contact request does not create a tuition contract until enrolment is confirmed in writing.',
 } as const
 

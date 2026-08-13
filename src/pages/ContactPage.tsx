@@ -7,7 +7,7 @@ import { FormDisclaimer } from '@/components/forms/FormDisclaimer'
 import { FormField, fieldClass } from '@/components/forms/FormField'
 import { FormSuccess } from '@/components/forms/FormSuccess'
 import { submitContact } from '@/lib/email'
-import { site, whatsappUrl } from '@/lib/site'
+import { site } from '@/lib/site'
 
 export function ContactPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
@@ -41,7 +41,7 @@ export function ContactPage() {
             We&apos;d love to <HeroHighlight>hear from you</HeroHighlight>
           </>
         }
-        description="Questions about boards, scheduling, or assessments — send a message or WhatsApp us."
+        description="Questions about boards, scheduling, or assessments — send us a message."
       />
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pt-12 pb-20 lg:grid-cols-2 md:px-6">
@@ -120,14 +120,6 @@ export function ContactPage() {
               </button>
             </>
           )}
-          <a
-            href={whatsappUrl('Hi, I have a question about MG Tuition India.')}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-outline w-full"
-          >
-            Or chat on WhatsApp
-          </a>
           <FormDisclaimer />
         </motion.form>
 

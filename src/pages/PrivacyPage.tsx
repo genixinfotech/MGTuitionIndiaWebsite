@@ -20,6 +20,9 @@ export function PrivacyPage() {
             or enquire about our tutoring services in India.
           </p>
 
+          <h2 className="text-xl font-bold text-charcoal">Enrolment</h2>
+          <p>{site.enrolmentDisclaimer}</p>
+
           <h2 className="text-xl font-bold text-charcoal">Information we collect</h2>
           <p>
             When you request an assessment, contact us, or apply as a tutor, we may collect your name, email
