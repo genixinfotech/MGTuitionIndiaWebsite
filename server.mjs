@@ -4,9 +4,21 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createEmailMiddleware } from './server/zeptomail.mjs'
 
+const Passenger = globalThis.PhusionPassenger
+if (Passenger) {
+  Passenger.configure({ autoInstall: false })
+}
+
 const root = path.dirname(fileURLToPath(import.meta.url))
-const dist = path.join(root, 'dist')
+const publicDir = path.join(root, 'dist')
 const port = Number(process.env.PORT || 4173)
+const blockedPublicFiles = new Set([
+  '.env',
+  '.env.example',
+  'server.mjs',
+  'package.json',
+  'package-lock.json',
+])
 
 function loadDotEnv() {
   const file = path.join(root, '.env')
@@ -60,10 +72,21 @@ const server = http.createServer(async (req, res) => {
   }
 
   const safePath = path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, '')
-  const requested = path.join(dist, safePath)
+  const baseName = path.basename(safePath)
+  if (
+    blockedPublicFiles.has(baseName) ||
+    safePath.split(path.sep).includes('server') ||
+    baseName.startsWith('.env')
+  ) {
+    res.statusCode = 404
+    res.end('Not found')
+    return
+  }
+
+  const requested = path.join(publicDir, safePath)
   const filePath = fs.existsSync(requested) && fs.statSync(requested).isFile()
     ? requested
-    : path.join(dist, 'index.html')
+    : path.join(publicDir, 'index.html')
 
   if (!fs.existsSync(filePath)) {
     res.statusCode = 404
@@ -74,6 +97,10 @@ const server = http.createServer(async (req, res) => {
   sendFile(res, filePath)
 })
 
-server.listen(port, () => {
-  console.log(`MG Tuition India listening on http://localhost:${port}`)
-})
+if (Passenger) {
+  server.listen('passenger')
+} else {
+  server.listen(port, () => {
+    console.log(`MG Tuition India listening on http://localhost:${port}`)
+  })
+}

@@ -33,18 +33,24 @@ async function postForm(kind: 'trial' | 'contact' | 'tutor', data: object): Prom
     body: JSON.stringify({ kind, data }),
   })
 
-  if (!response.ok) {
-    let message = `Unable to send your message to ${site.email}. Please try again.`
+  const contentType = response.headers.get('content-type') ?? ''
+  let payload: { ok?: boolean; error?: string } | null = null
+  if (contentType.includes('application/json')) {
     try {
-      const payload = (await response.json()) as { error?: string }
-      if (payload.error) message = payload.error
+      payload = (await response.json()) as { ok?: boolean; error?: string }
     } catch {
-      // keep fallback
+      payload = null
     }
-    throw new Error(message)
   }
 
-  return { ok: true }
+  if (response.ok && payload?.ok) return { ok: true }
+
+  throw new Error(
+    payload?.error ||
+      (contentType.includes('application/json')
+        ? `Unable to send your message to ${site.email}. Please try again.`
+        : 'The email service is not running on this server. After building, start the site with npm start and keep a .env file next to server.mjs.'),
+  )
 }
 
 export function submitTrial(data: TrialPayload) {

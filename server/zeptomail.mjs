@@ -409,9 +409,21 @@ export function createEmailMiddleware(env) {
       return
     }
 
+    if (req.method === 'GET') {
+      const configured = Boolean(
+        normalizeZeptoUrl(env.ZEPTOMAIL_URL) &&
+          zeptoAuthHeader(env.ZEPTOMAIL_TOKEN) &&
+          env.ZEPTOMAIL_FROM_ADDRESS?.trim(),
+      )
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ ok: true, configured }))
+      return
+    }
+
     if (req.method !== 'POST') {
       res.statusCode = 405
-      res.setHeader('Allow', 'POST')
+      res.setHeader('Allow', 'GET, POST')
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({ error: 'Method not allowed.' }))
       return
