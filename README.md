@@ -6,14 +6,23 @@ Built with Vite, React, TypeScript, Tailwind CSS, and Framer Motion.
 
 ## Region
 
-Set **`Region=India`** or **`Region=GCC`** in Plesk Node.js custom environment variables (or in `.env` locally). The server injects the region into the page at runtime; no separate build per region is required.
+Set **`Region=India`** or **`Region=GCC`** in Plesk Node.js custom environment variables, then **restart the Node app**. The server injects the region when serving pages and exposes it at `/api/public-config`.
 
-For local development, set **`VITE_REGION=India`** or **`VITE_REGION=GCC`** in `.env` (Vite reads this at dev/build time).
+`VITE_REGION` is only used during **`npm run build`** (build-time fallback). Setting it alone on Plesk without `Region` will not change the live site after a build unless you rebuild with that variable present in the shell.
 
 | Region | Site name | Legal entity | Default email |
 |--------|-----------|--------------|---------------|
 | India | MG Tuition India | IdealMG Educare LLP | info@mgtuition.in |
 | GCC | MG Tuition GCC | IdealMG Educare FZC | info@mgtuition.ae |
+
+### Verify GCC is active
+
+1. Restart the Node.js app after changing env vars.
+2. Open `https://your-domain/api/public-config` — expect `"region":"GCC"`.
+3. View page source — look for `window.__MG_PUBLIC_CONFIG__` with `"region":"GCC"`.
+4. If `/api/public-config` shows GCC but the site still looks like India, hard-refresh or clear CDN/cache.
+
+If the document root serves static files from `dist/` directly (bypassing Node), either route all traffic through Node (`app.cjs` / `server.mjs`) or rebuild with `VITE_REGION=GCC npm run build`.
 
 Region-specific copy, pricing, offices, and location dropdowns live in `src/lib/regions/india.ts` and `src/lib/regions/gcc.ts`.
 

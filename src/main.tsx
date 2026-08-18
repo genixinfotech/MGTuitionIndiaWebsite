@@ -1,10 +1,18 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+import { ensurePublicConfig } from '@/lib/public-config'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+async function bootstrap() {
+  await ensurePublicConfig()
+
+  const { StrictMode } = await import('react')
+  const { createRoot } = await import('react-dom/client')
+  const { default: App } = await import('./App.tsx')
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}
+
+bootstrap()
