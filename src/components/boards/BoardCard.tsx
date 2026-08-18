@@ -30,6 +30,16 @@ export function BoardCard({ board, index = 0, onBookTrial }: BoardCardProps) {
         theme.glow,
       )}
     >
+      {board.topBadge ? (
+        <span
+          className={cn(
+            'absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-gradient-to-r px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-[0_10px_28px_-10px_rgba(15,23,42,0.65)] ring-1 ring-white/15',
+            theme.badgeGradient,
+          )}
+        >
+          {board.topBadge}
+        </span>
+      ) : null}
       <div
         className={cn(
           'relative overflow-hidden rounded-t-[28px] bg-gradient-to-br px-7 pb-12 pt-7 text-white',
@@ -83,7 +93,7 @@ export function BoardCard({ board, index = 0, onBookTrial }: BoardCardProps) {
         </div>
 
         <p className="relative mt-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/65">
-          Indian syllabus
+          {board.eyebrow}
         </p>
         <h3 className="relative mt-1.5 font-outfit text-3xl font-extrabold tracking-tight">
           {board.name}
@@ -141,7 +151,7 @@ export function BoardCard({ board, index = 0, onBookTrial }: BoardCardProps) {
 
 export function BoardCardGrid({ onBookTrial }: { onBookTrial: () => void }) {
   return (
-    <div className="grid gap-7 md:grid-cols-3">
+    <div className="grid gap-7 pt-5 md:grid-cols-3">
       {site.boards.map((board, i) => (
         <BoardCard key={board.id} board={board} index={i} onBookTrial={onBookTrial} />
       ))}

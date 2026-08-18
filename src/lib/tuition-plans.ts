@@ -1,5 +1,18 @@
 export const batchSizeLabel = '6–8'
 
+export const pricingBoards = [
+  { id: 'cbse', label: 'CBSE', oneToOne: false },
+  { id: 'icse', label: 'ICSE', oneToOne: false },
+  { id: 'igcse', label: 'IGCSE', oneToOne: true },
+] as const
+
+export type PricingBoardId = (typeof pricingBoards)[number]['id']
+
+export function batchLabelForBoard(boardId: PricingBoardId) {
+  const board = pricingBoards.find((item) => item.id === boardId)
+  return board?.oneToOne ? 'One-to-one' : batchSizeLabel
+}
+
 export const tuitionPlans = [
   { grade: '6th Grade/Class', sessionsMin: 8, sessionsMax: 8, rate: 2500 },
   { grade: '7th Grade/Class', sessionsMin: 8, sessionsMax: 8, rate: 2500 },
@@ -14,6 +27,13 @@ export type TuitionPlanGrade = (typeof tuitionPlans)[number]['grade']
 
 export function formatInr(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`
+}
+
+export function monthlyRateForGrade(grade: string | null | undefined) {
+  const number = grade?.match(/\d+/)?.[0]
+  if (!number) return 3000
+  const plan = tuitionPlans.find((item) => item.grade.startsWith(`${number}th`) || item.grade.startsWith(number))
+  return plan?.rate ?? (Number(number) <= 7 ? 2500 : 3000)
 }
 
 export function formatSessionsLabel(plan: { sessionsMin: number; sessionsMax: number }) {

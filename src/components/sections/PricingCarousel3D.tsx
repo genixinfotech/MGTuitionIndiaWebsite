@@ -4,13 +4,17 @@ import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
 import { site } from '@/lib/site'
 import {
+  batchLabelForBoard,
   batchSizeLabel,
   formatInr,
   formatSessionsLabel,
   parseGradeLabel,
+  pricingBoards,
   tuitionPlans,
+  type PricingBoardId,
 } from '@/lib/tuition-plans'
 import { cn } from '@/lib/utils'
+import { PricingBoardTabs } from '@/components/pricing/PricingBoardTabs'
 
 function GradeLabel({ grade, className }: { grade: string; className?: string }) {
   const parts = parseGradeLabel(grade)
@@ -62,7 +66,10 @@ function getCardTransform(offset: number) {
 export function PricingCarousel3D() {
   const { openTrial } = useTrial()
   const total = tuitionPlans.length
+  const [board, setBoard] = useState<PricingBoardId>('cbse')
   const [active, setActive] = useState(0)
+  const activeBoard = pricingBoards.find((item) => item.id === board) ?? pricingBoards[0]
+  const batchLabel = batchLabelForBoard(board)
 
   const goTo = useCallback(
     (index: number) => {
@@ -136,7 +143,19 @@ export function PricingCarousel3D() {
           </p>
         </motion.div>
 
-        <div className="relative mt-14 w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-10 flex justify-center"
+        >
+          <PricingBoardTabs value={board} onChange={(next) => {
+            setBoard(next)
+            setActive(0)
+          }} />
+        </motion.div>
+
+        <div key={board} className="relative mt-10 w-full">
           <button
             type="button"
             onClick={goPrev}
@@ -212,7 +231,7 @@ export function PricingCarousel3D() {
                             {formatSessionsLabel(plan)} / month
                           </span>
                           <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
-                            {batchSizeLabel} students
+                            {activeBoard.oneToOne ? batchLabel : `${batchSizeLabel} students`}
                           </span>
                         </div>
 
@@ -287,11 +306,12 @@ export function PricingCarousel3D() {
           </div>
 
           <p className="mt-6 text-center text-sm text-white/45">
-            Viewing{' '}
+            {activeBoard.label} ·{' '}
             <span className="font-semibold text-white/75">
               <GradeLabel grade={activePlan.grade} />
             </span>{' '}
             · {formatInr(activePlan.rate)}/month
+            {activeBoard.oneToOne ? ' · one-to-one' : ` · ${batchSizeLabel} per batch`}
           </p>
         </div>
       </div>

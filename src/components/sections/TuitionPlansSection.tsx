@@ -1,15 +1,21 @@
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { ArrowRight, CalendarDays, Sparkles, Users } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
 import {
+  batchLabelForBoard,
   batchSizeLabel,
   formatInr,
   formatSessionsLabel,
   parseGradeLabel,
+  pricingBoards,
   tuitionPlans,
+  type PricingBoardId,
 } from '@/lib/tuition-plans'
 import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
+import { PricingBoardTabs } from '@/components/pricing/PricingBoardTabs'
+import { pricingBoardThemes } from '@/lib/boards'
 
 const planCols =
   'md:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_14rem]'
@@ -29,8 +35,21 @@ function GradeLabel({ grade, className }: { grade: string; className?: string })
   )
 }
 
+const planRowMotion = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: (index: number) => ({
+    delay: index * 0.09,
+    duration: 0.5,
+    ease: [0.22, 1, 0.36, 1] as const,
+  }),
+}
+
 export function TuitionPlansSection() {
   const { openTrial } = useTrial()
+  const [board, setBoard] = useState<PricingBoardId>('cbse')
+  const activeBoard = pricingBoards.find((item) => item.id === board) ?? pricingBoards[0]
+  const batchLabel = batchLabelForBoard(board)
 
   return (
     <section
@@ -97,34 +116,39 @@ export function TuitionPlansSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5 }}
-          className="mt-14 rounded-[32px] border border-white/15 bg-black/25 p-3 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-xl md:p-5"
+          className={cn(
+            'mt-10 overflow-hidden rounded-[32px] border shadow-[0_32px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-xl transition-colors duration-500',
+            pricingBoardThemes[board].panel,
+            pricingBoardThemes[board].panelBorder,
+          )}
         >
-          <div className={cn('hidden gap-x-4 gap-y-2.5 md:grid', planCols)}>
-            <div className="col-span-5 grid grid-cols-subgrid px-5 py-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                Grade / Class
-              </p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                Sessions / month
-              </p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                Students / batch
-              </p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Rate</p>
-              <p className="text-right text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                Action
-              </p>
-            </div>
+          <PricingBoardTabs attached value={board} onChange={setBoard} />
+          <div className="p-3 md:p-5">
+            <div className={cn('hidden gap-x-4 gap-y-2.5 md:grid', planCols)}>
+              <div className="col-span-5 grid grid-cols-subgrid px-5 py-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Grade / Class
+                </p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Sessions / month
+                </p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  {activeBoard.oneToOne ? 'Format' : 'Students / batch'}
+                </p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Rate</p>
+                <p className="text-right text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Action
+                </p>
+              </div>
 
-            {tuitionPlans.map((plan, i) => (
-              <motion.div
-                key={plan.grade}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.04, duration: 0.4 }}
-                className="group relative col-span-5 grid grid-cols-subgrid items-center overflow-hidden rounded-[22px] bg-white/[0.07] px-5 py-4 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:shadow-[0_16px_40px_-12px_rgba(204,0,0,0.65)] hover:ring-white/25"
-              >
+              {tuitionPlans.map((plan, i) => (
+                <motion.div
+                  key={`${board}-${plan.grade}`}
+                  initial={planRowMotion.initial}
+                  animate={planRowMotion.animate}
+                  transition={planRowMotion.transition(i)}
+                  className="group relative col-span-5 grid grid-cols-subgrid items-center overflow-hidden rounded-[22px] bg-white/[0.07] px-5 py-4 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:shadow-[0_16px_40px_-12px_rgba(204,0,0,0.65)] hover:ring-white/25"
+                >
                 <div
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(255,255,255,0.22),transparent_40%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -142,7 +166,7 @@ export function TuitionPlansSection() {
 
                 <span className="relative inline-flex items-center gap-1.5 text-base font-semibold tabular-nums text-white">
                   <Users className="h-4 w-4 text-white/50 transition-colors group-hover:text-white/80" />
-                  {batchSizeLabel}
+                  {batchLabel}
                 </span>
 
                 <div className="relative">
@@ -166,16 +190,15 @@ export function TuitionPlansSection() {
             ))}
           </div>
 
-          <div className="space-y-2.5 md:hidden">
-            {tuitionPlans.map((plan, i) => (
-              <motion.div
-                key={plan.grade}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.04, duration: 0.4 }}
-                className="group relative overflow-hidden rounded-[22px] bg-white/[0.07] p-5 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:ring-white/25"
-              >
+            <div className="space-y-2.5 md:hidden">
+              {tuitionPlans.map((plan, i) => (
+                <motion.div
+                  key={`${board}-${plan.grade}`}
+                  initial={planRowMotion.initial}
+                  animate={planRowMotion.animate}
+                  transition={planRowMotion.transition(i)}
+                  className="group relative overflow-hidden rounded-[22px] bg-white/[0.07] p-5 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:ring-white/25"
+                >
                 <div className="flex items-start justify-between gap-4">
                   <GradeLabel grade={plan.grade} className="text-lg font-bold text-white" />
                   <p className="font-outfit text-2xl font-extrabold tabular-nums">
@@ -189,7 +212,7 @@ export function TuitionPlansSection() {
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 group-hover:bg-white/20">
                     <Users className="h-3.5 w-3.5" />
-                    {batchSizeLabel} / batch
+                    {activeBoard.oneToOne ? batchLabel : `${batchLabel} / batch`}
                   </span>
                 </div>
                 <button
@@ -203,6 +226,7 @@ export function TuitionPlansSection() {
               </motion.div>
             ))}
           </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -212,8 +236,9 @@ export function TuitionPlansSection() {
           className="mt-10 flex flex-col items-center gap-4 text-center"
         >
           <p className="max-w-lg text-base text-white/55">
-            Prices are monthly, per subject path in very small batches of {batchSizeLabel} students.
-            Grades 9–12 include 8–12 sessions per month.
+            {activeBoard.oneToOne
+              ? `${activeBoard.label} prices are monthly, per subject — tuition is one-to-one only. Grades 9–12 include 8–12 sessions per month.`
+              : `${activeBoard.label} prices are monthly, per subject path in very small batches of ${batchSizeLabel} students. Grades 9–12 include 8–12 sessions per month.`}
           </p>
           <button type="button" onClick={() => openTrial()} className="btn-primary text-base">
             {site.assessmentCta}

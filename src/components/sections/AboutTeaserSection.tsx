@@ -63,8 +63,8 @@ export function AboutTeaserSection() {
           <p className="mt-5 text-lg leading-relaxed text-charcoal/65">
             {site.people.founder.name} founded {site.brand} so no child is left behind because tuition
             was too costly, too crowded, or too far away. From our Kerala hubs in Cherthala and
-            Kottayam, we deliver live classes in very small batches tailored to{' '}
-            {site.syllabusCoverage}.
+            Kottayam, we deliver live classes in very small batches for CBSE and ICSE, and
+            one-to-one tuition for IGCSE.
           </p>
 
           <div className="mt-8 grid grid-cols-3 gap-3">

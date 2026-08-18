@@ -1,6 +1,6 @@
 # MG Tuition India
 
-Small-batch live online tuition marketing site for all major Indian syllabi (CBSE, ICSE, State Boards).
+Small-batch live online tuition marketing site for CBSE, ICSE, and IGCSE (one-to-one).
 
 Built with Vite, React, TypeScript, Tailwind CSS, and Framer Motion.
 
@@ -13,6 +13,17 @@ cp .env.example .env
 ```
 
 Add your ZeptoMail **API host** and **Send Mail Token** to `.env`. Do not prefix those values with `VITE_` — the token stays on the server.
+
+Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the Supabase project **Connect** dialog. Then run the SQL in `supabase/migrations/` in the Supabase SQL editor (this also creates the private `assessment-reports` storage bucket for PDFs). Promote staff or a student consultant with:
+
+```sql
+update public.profiles set role = 'staff' where email = 'you@mgtuition.in';
+update public.profiles set role = 'student_consultant' where email = 'consultant@mgtuition.in';
+```
+
+In Authentication → URL configuration, set the site URL to `http://localhost:5173` (and add `https://mgtuition.in` for production). Redirect URLs should include `/auth/callback` and `/update-password`.
+
+To let parents create student logins, add **`SUPABASE_SERVICE_ROLE_KEY`** to the server `.env` or Plesk environment variables. Do not prefix it with `VITE_`. Then run the SQL in `supabase/migrations/` (including the student-role files).
 
 ```bash
 npm run dev

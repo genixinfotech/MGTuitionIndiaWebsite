@@ -20,7 +20,7 @@ export function SubjectsPage() {
             Boards &amp; subjects <HeroHighlight>we teach</HeroHighlight>
           </>
         }
-        description="Live classes in very small batches, mapped to Indian syllabi — personalised pace, clear goals, and tutors who know your board inside out."
+        description="Live classes mapped to CBSE, ICSE and Cambridge IGCSE — personalised pace, clear goals, and tutors who know your syllabus inside out. IGCSE is offered one-to-one only."
       />
 
       <section className="relative overflow-hidden bg-[#f8fafc] px-4 py-16 md:px-6 md:py-24">
@@ -55,8 +55,8 @@ export function SubjectsPage() {
             Taught in very small batches, at your child&apos;s pace
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-charcoal/55">
-            Every subject below is available across our boards — matched to syllabus, not a generic
-            worksheet pack.
+            Every subject below is available across CBSE, ICSE and IGCSE — matched to syllabus,
+            not a generic worksheet pack. IGCSE classes are one-to-one only.
           </p>
         </motion.div>
 

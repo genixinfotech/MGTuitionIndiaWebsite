@@ -29,7 +29,7 @@ const steps = [
   {
     icon: Users,
     title: 'Teach',
-    text: 'Live sessions in very small batches with tutors trained for Indian curricula.',
+    text: 'Live sessions in very small batches for CBSE & ICSE, or one-to-one for IGCSE.',
     accent: {
       icon: 'from-sky-400/30 to-indigo-500/20',
       glow: 'group-hover:shadow-[0_24px_48px_-16px_rgba(99,102,241,0.35)]',

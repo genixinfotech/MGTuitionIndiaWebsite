@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { site, whatsappUrl } from '@/lib/site'
 import { useTrial } from '@/context/TrialContext'
+import { useAuth } from '@/context/AuthContext'
 
 function FacebookIcon({ className }: { className?: string }) {
   return (
@@ -38,22 +39,172 @@ function FooterHeading({ children }: { children: React.ReactNode }) {
   )
 }
 
+function FooterBackground() {
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1a060a] via-crimson-dark to-[#0d0406]" />
+      <div className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-crimson/20 blur-[120px]" />
+      <div className="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-crimson/15 blur-[100px]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_55%)]" />
+    </div>
+  )
+}
+
+function BrandBlurb() {
+  return (
+    <div>
+      <img
+        src="/images/mg-tuition-logo.png"
+        alt={site.name}
+        className="h-11 w-auto brightness-0 invert"
+      />
+      <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/65">
+        {site.tagline}. Live online classes in very small batches — from {site.legal}.
+      </p>
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+        Trusted since 2015 · Kerala &amp; across India
+      </p>
+    </div>
+  )
+}
+
+function OfficeCard({ office }: { office: (typeof site.offices)[number] }) {
+  return (
+    <div className="flex h-full gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-4">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
+        <MapPin className="h-4 w-4 text-crimson-light" />
+      </span>
+      <div className="text-sm">
+        <p className="font-semibold text-white/90">{office.label}</p>
+        {office.lines.map((line) => (
+          <p key={line} className="mt-0.5 text-white/60">
+            {line}
+          </p>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ContactDetails() {
+  const kottayam = site.offices.find((office) => office.id === 'kottayam')
+  const cherthala = site.offices.find((office) => office.id === 'cherthala')
+
+  return (
+    <div className="grid items-stretch gap-4 md:grid-cols-3">
+      {kottayam ? <OfficeCard office={kottayam} /> : null}
+      {cherthala ? <OfficeCard office={cherthala} /> : null}
+      <div className="flex h-full flex-col justify-center gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-4">
+        <a
+          href={site.phoneHref}
+          className="flex items-center gap-3 text-sm text-white/85 transition-colors hover:text-white"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
+            <Phone className="h-4 w-4 text-crimson-light" />
+          </span>
+          {site.phoneDisplay}
+        </a>
+        <a
+          href={`mailto:${site.email}`}
+          className="flex items-center gap-3 text-sm text-white/85 transition-colors hover:text-white"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
+            <Mail className="h-4 w-4 text-crimson-light" />
+          </span>
+          {site.email}
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function SignedInFooterColumns() {
+  const kottayam = site.offices.find((office) => office.id === 'kottayam')
+  const cherthala = site.offices.find((office) => office.id === 'cherthala')
+
+  return (
+    <div className="grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-10 lg:py-12">
+      <div>
+        <FooterHeading>About</FooterHeading>
+        <p className="text-sm leading-relaxed text-white/65">
+          {site.tagline}. Live online classes in very small batches — from {site.legal}.
+        </p>
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+          Trusted since 2015 · Kerala &amp; across India
+        </p>
+      </div>
+
+      {kottayam ? (
+        <div>
+          <FooterHeading>{kottayam.label}</FooterHeading>
+          <div className="space-y-1 text-sm text-white/65">
+            {kottayam.lines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {cherthala ? (
+        <div>
+          <FooterHeading>{cherthala.label}</FooterHeading>
+          <div className="space-y-1 text-sm text-white/65">
+            {cherthala.lines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div>
+        <FooterHeading>Contact</FooterHeading>
+        <div className="space-y-3 text-sm">
+          <a
+            href={site.phoneHref}
+            className="flex items-center gap-2.5 text-white/75 transition-colors hover:text-white"
+          >
+            <Phone className="h-4 w-4 shrink-0 text-crimson-light" />
+            {site.phoneDisplay}
+          </a>
+          <a
+            href={`mailto:${site.email}`}
+            className="flex items-center gap-2.5 text-white/75 transition-colors hover:text-white"
+          >
+            <Mail className="h-4 w-4 shrink-0 text-crimson-light" />
+            {site.email}
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Footer() {
   const { openTrial } = useTrial()
+  const { user } = useAuth()
   const year = new Date().getFullYear()
+
+  if (user) {
+    return (
+      <footer className="relative overflow-hidden bg-[#120608] text-white">
+        <FooterBackground />
+        <div className="relative mx-auto max-w-7xl px-4 md:px-6">
+          <SignedInFooterColumns />
+          <div className="border-t border-white/10 py-6">
+            <p className="text-xs text-white/50">
+              © {year} {site.legal}. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
+    )
+  }
 
   return (
     <footer className="relative overflow-hidden bg-[#120608] text-white">
-      {/* Background */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a060a] via-crimson-dark to-[#0d0406]" />
-        <div className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-crimson/20 blur-[120px]" />
-        <div className="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-crimson/15 blur-[100px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.06),transparent_55%)]" />
-      </div>
+      <FooterBackground />
 
       <div className="relative mx-auto max-w-7xl px-4 md:px-6">
-        {/* CTA strip */}
         <div className="border-b border-white/10 py-10 md:py-12">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div className="max-w-xl">
@@ -64,7 +215,7 @@ export function Footer() {
                 Get a free assessment — see the difference live
               </p>
               <p className="mt-2 text-sm text-white/60">
-                Very small batches for {site.syllabusCoverage}. No commitment required.
+                Very small batches for CBSE & ICSE. IGCSE is one-to-one only. No commitment required.
               </p>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -89,21 +240,9 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Main grid */}
         <div className="grid gap-12 py-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-10 lg:py-16">
-          {/* Brand */}
           <div className="lg:col-span-4">
-            <img
-              src="/images/mg-tuition-logo.png"
-              alt={site.name}
-              className="h-11 w-auto brightness-0 invert"
-            />
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/65">
-              {site.tagline}. Live online classes in very small batches — from {site.legal}.
-            </p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-              Trusted since 2015 · Kerala &amp; across India
-            </p>
+            <BrandBlurb />
             <div className="mt-6 flex gap-3">
               <a
                 href={site.facebook}
@@ -126,8 +265,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Explore */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-4">
             <FooterHeading>Explore</FooterHeading>
             <ul className="space-y-3">
               {site.nav.map((item) => (
@@ -141,8 +279,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Boards */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-4">
             <FooterHeading>Boards</FooterHeading>
             <ul className="space-y-3">
               {site.boards.map((b) => (
@@ -152,53 +289,13 @@ export function Footer() {
               ))}
             </ul>
           </div>
-
-          {/* Contact */}
-          <div className="lg:col-span-4">
-            <FooterHeading>Contact</FooterHeading>
-            <div className="space-y-4">
-              <a
-                href={site.phoneHref}
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm transition-colors hover:border-white/20 hover:bg-white/10"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
-                  <Phone className="h-4 w-4 text-crimson-light" />
-                </span>
-                <span className="text-white/85">{site.phoneDisplay}</span>
-              </a>
-              <a
-                href={`mailto:${site.email}`}
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm transition-colors hover:border-white/20 hover:bg-white/10"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
-                  <Mail className="h-4 w-4 text-crimson-light" />
-                </span>
-                <span className="text-white/85">{site.email}</span>
-              </a>
-
-              {site.offices.map((office) => (
-                <div
-                  key={office.id}
-                  className="flex gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
-                    <MapPin className="h-4 w-4 text-crimson-light" />
-                  </span>
-                  <div className="text-sm">
-                    <p className="font-semibold text-white/90">{office.label}</p>
-                    {office.lines.map((line) => (
-                      <p key={line} className="mt-0.5 text-white/60">
-                        {line}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Bottom bar */}
+        <div className="pb-14 lg:pb-16">
+          <FooterHeading>Contact</FooterHeading>
+          <ContactDetails />
+        </div>
+
         <div className="border-t border-white/10 py-8">
           <div className="flex flex-col items-center justify-between gap-3 text-center text-xs text-white/50 md:flex-row md:text-left">
             <p>

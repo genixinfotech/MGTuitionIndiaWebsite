@@ -15,7 +15,6 @@ import { HeroHighlight, PageHero } from '@/components/layout/PageHero'
 import { FormDisclaimer } from '@/components/forms/FormDisclaimer'
 import { FormSuccess } from '@/components/forms/FormSuccess'
 import { submitTutor } from '@/lib/email'
-import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 const perks = [
@@ -35,7 +34,7 @@ const perks = [
     lightColor: 'bg-emerald-100',
     iconColor: 'text-emerald-600',
     title: 'Steady student demand',
-    description: `Consistent batches across ${site.syllabusCoverage} from Class 6 upward.`,
+    description: 'CBSE & ICSE small batches, plus IGCSE one-to-one, from Class 6 upward.',
   },
   {
     icon: GraduationCap,
@@ -97,7 +96,7 @@ export function BecomeTutorPage() {
             Become a <HeroHighlight>tutor</HeroHighlight>
           </>
         }
-        description="Teach online in very small batches for Indian boards. We look for subject mastery, patience, and reliable internet."
+        description="Teach online in very small batches for CBSE and ICSE, and one-to-one for IGCSE. We look for subject mastery, patience, and reliable internet."
       />
 
       {/* Why join */}
@@ -231,7 +230,7 @@ export function BecomeTutorPage() {
                 <ul className="mt-6 space-y-3">
                   {[
                     'Very small batches — real impact per student',
-                    `${site.syllabusCoverage} classes`,
+                    'CBSE & ICSE batches, plus IGCSE one-to-one',
                     'Support from Cherthala & Kottayam hubs',
                   ].map((line) => (
                     <li key={line} className="flex items-start gap-2.5 text-sm text-white/90">

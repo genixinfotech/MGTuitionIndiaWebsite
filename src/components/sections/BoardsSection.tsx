@@ -29,11 +29,12 @@ export function BoardsSection() {
             Boards we teach
           </p>
           <h2 className="text-4xl font-extrabold tracking-tight text-charcoal md:text-5xl">
-            Built for Indian curricula
+            Boards we teach
           </h2>
           <p className="mt-4 text-lg text-charcoal/55">
-            From Class 1 fundamentals right through to the board exams — matched to your
-            child&apos;s syllabus, not a generic timetable.
+            CBSE and ICSE in very small batches, plus Cambridge IGCSE on a{' '}
+            <span className="font-semibold text-charcoal">one-to-one basis only</span> — matched
+            to your child&apos;s syllabus, not a generic timetable.
           </p>
         </motion.div>
 

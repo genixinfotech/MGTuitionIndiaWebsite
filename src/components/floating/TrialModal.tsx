@@ -108,7 +108,7 @@ export function TrialModal() {
                 {status === 'done' ? 'Request received' : 'Book your free assessment'}
               </h2>
               <p className="relative mt-1.5 text-sm text-white/80">
-                Small-batch live tuition for {site.syllabusCoverage}.
+                Small-batch live tuition for CBSE & ICSE, plus IGCSE one-to-one.
               </p>
             </div>
 
@@ -197,7 +197,7 @@ export function TrialModal() {
                   <FormField label="Notes (optional)" icon={MessageSquare} iconAlign="top">
                     <textarea
                       className={`${fieldClass(true)} min-h-[88px] resize-none`}
-                      placeholder="Class, subjects, goals"
+                      placeholder="Class 6 or above, subjects, goals"
                       value={form.message}
                       onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                     />

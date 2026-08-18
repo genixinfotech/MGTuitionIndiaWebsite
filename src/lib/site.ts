@@ -3,7 +3,7 @@ export const site = {
   brand: 'MG Tuition',
   legal: 'IdealMG Educare LLP',
   tagline: 'Small-Batch Live Tuition for Indian Boards',
-  syllabusCoverage: 'CBSE, ICSE & Kerala State Board',
+  syllabusCoverage: 'CBSE, ICSE & IGCSE',
   email: 'info@mgtuition.in',
   // Update these when India numbers are confirmed
   phoneDisplay: '+91 98765 43210',
@@ -40,42 +40,51 @@ export const site = {
       id: 'cbse',
       name: 'CBSE',
       tag: 'Most requested',
-      levels: 'Classes 1–12',
+      eyebrow: 'Indian syllabus',
+      levels: 'Classes 6–12',
+      oneToOne: false,
+      topBadge: '6–8 Students per Batch',
       description:
-        'Personalised coaching aligned to the CBSE syllabus — from foundational maths to Class 12 board readiness.',
+        'Personalised coaching aligned to the CBSE syllabus — from Class 6 through Class 12 board readiness.',
       topics: [
-        'Classes 1–5 foundational literacy & numeracy',
         'Classes 6–8 concept building across Maths, Science & English',
         'Classes 9–10 board-focused practice and revision cycles',
         'Classes 11–12 stream support (PCM / PCB / Commerce basics)',
+        'Mapped to the CBSE textbook and exam calendar',
       ],
     },
     {
       id: 'icse',
       name: 'ICSE / ISC',
       tag: 'Concept depth',
-      levels: 'Classes 1–12',
+      eyebrow: 'Indian syllabus',
+      levels: 'Classes 6–12',
+      oneToOne: false,
+      topBadge: '6–8 Students per Batch',
       description:
-        'Structured support for ICSE and ISC with focus on conceptual clarity and exam technique.',
+        'Structured support for ICSE and ISC from Class 6, with focus on conceptual clarity and exam technique.',
       topics: [
-        'ICSE middle-school reinforcement',
+        'ICSE Classes 6–8 concept building and reinforcement',
         'ICSE Class 9–10 subject mastery and paper technique',
         'ISC Class 11–12 depth with application focus',
         'English language & literature support',
       ],
     },
     {
-      id: 'kerala',
-      name: 'Kerala State Board',
-      tag: 'Local expertise',
-      levels: 'SSLC & Plus Two',
+      id: 'igcse',
+      name: 'IGCSE Syllabus',
+      tag: 'Individual Attention',
+      eyebrow: 'Cambridge syllabus',
+      levels: 'One-to-one · Classes 6–12',
+      oneToOne: true,
+      topBadge: 'One-to-one tuition only',
       description:
-        'Local expertise for Kerala SSLC and Higher Secondary, taught in a language and pace that fits your child.',
+        'Cambridge IGCSE tuition from Class 6, offered on a one-to-one basis only — so every session is paced to your child, not a batch.',
       topics: [
-        'SSLC syllabus coverage in English or Malayalam medium',
-        'Plus One & Plus Two Science and Commerce streams',
-        'Chapter-wise tests and model exam drills',
-        'Aligned to the Kerala board exam calendar',
+        'One-to-one tuition only — no group batches for this syllabus',
+        'Maths, Sciences & English mapped to the Cambridge IGCSE syllabus',
+        'Past-paper technique, exam skills and checkpoint support',
+        'Personalised pace for international and IGCSE-track students',
       ],
     },
   ],
@@ -120,7 +129,7 @@ export const site = {
   formDisclaimer:
     'By submitting this form you agree to be contacted by MG Tuition about this enquiry. We use your details only to respond and do not sell personal data.',
   enrolmentDisclaimer:
-    'IdealMG Educare LLP provides live online tuition for Indian boards. An assessment or contact request does not create a tuition contract until enrolment is confirmed in writing.',
+    'IdealMG Educare LLP provides live online tuition for CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only. An assessment or contact request does not create a tuition contract until enrolment is confirmed in writing.',
 } as const
 
 export function whatsappUrl(message?: string) {

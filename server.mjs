@@ -3,6 +3,7 @@ import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createEmailMiddleware } from './server/zeptomail.mjs'
+import { createStudentsMiddleware } from './server/students.mjs'
 
 const Passenger = globalThis.PhusionPassenger
 if (Passenger) {
@@ -42,6 +43,7 @@ function loadDotEnv() {
 
 loadDotEnv()
 const emailMiddleware = createEmailMiddleware(process.env)
+const studentsMiddleware = createStudentsMiddleware(process.env)
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -68,6 +70,11 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/email') {
     await emailMiddleware(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/students') {
+    await studentsMiddleware(req, res)
     return
   }
 

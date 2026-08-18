@@ -6,6 +6,8 @@ import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { useTrial } from '@/context/TrialContext'
 import { useAuth } from '@/context/AuthContext'
+import { homePathForRole, isDashboardRoute } from '@/lib/auth-paths'
+import { AccountMenu } from '@/components/layout/AccountMenu'
 
 function NavSecondaryButton({
   className,
@@ -14,12 +16,9 @@ function NavSecondaryButton({
   className?: string
   fullWidth?: boolean
 }) {
-  const { user } = useAuth()
-  const to = user ? '/portal' : '/login'
-
   return (
     <Link
-      to={to}
+      to="/login"
       className={cn(
         'group inline-flex items-center justify-center gap-2 rounded-full',
         'bg-crimson/[0.06] px-5 py-2.5 text-sm font-semibold text-crimson',
@@ -29,7 +28,7 @@ function NavSecondaryButton({
       )}
     >
       <LogIn className="h-3.5 w-3.5" />
-      {user ? 'Portal' : 'Login'}
+      Login
     </Link>
   )
 }
@@ -65,11 +64,67 @@ function NavTrialButton({
   )
 }
 
+function MainNav({ className }: { className?: string }) {
+  return (
+    <nav className={cn('items-center gap-0.5', className)}>
+      {site.nav.map((item) => (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          end={item.path === '/'}
+          className="relative rounded-full px-1 py-1"
+        >
+          {({ isActive }) => (
+            <>
+              {isActive ? (
+                <motion.span
+                  layoutId="nav-active-pill"
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-crimson to-[#e63946] shadow-md shadow-crimson/25"
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                />
+              ) : null}
+              <span
+                className={cn(
+                  'relative z-10 block rounded-full px-3.5 py-2 text-sm font-semibold transition-colors duration-200',
+                  isActive
+                    ? 'text-white'
+                    : 'text-charcoal/65 hover:bg-crimson/[0.06] hover:text-crimson',
+                )}
+              >
+                {item.label}
+              </span>
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
+
+function AccountActions() {
+  const { user } = useAuth()
+  if (!user) return null
+
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <Link
+        to={homePathForRole(user.role)}
+        className="inline-flex items-center justify-center rounded-full bg-crimson/[0.06] px-4 py-2 text-sm font-semibold text-crimson transition-colors hover:bg-crimson/[0.12] hover:text-crimson-dark"
+      >
+        {user.role === 'student' ? 'My classes' : 'Dashboard'}
+      </Link>
+      <AccountMenu />
+    </div>
+  )
+}
+
 export function Header() {
   const { openTrial } = useTrial()
+  const { user, loading } = useAuth()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const dashboardView = isDashboardRoute(location.pathname)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -84,18 +139,17 @@ export function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
-      <div className="hidden bg-charcoal text-white/70 sm:block">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs md:px-6">
-          <a
-            href={site.phoneHref}
-            className="inline-flex items-center gap-2 transition hover:text-white"
-          >
-            <Phone className="h-3.5 w-3.5 text-crimson-light" />
-            {site.phoneDisplay}
-          </a>
-          <p>Offices in Cherthala &amp; Kottayam, Kerala</p>
+      {!dashboardView ? (
+        <div className="hidden bg-charcoal text-white/70 sm:block">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs md:px-6">
+            <a href={site.phoneHref} className="inline-flex items-center gap-2 transition hover:text-white">
+              <Phone className="h-3.5 w-3.5 text-crimson-light" />
+              {site.phoneDisplay}
+            </a>
+            <p>Offices in Cherthala &amp; Kottayam, Kerala</p>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div
         className={cn(
@@ -112,54 +166,43 @@ export function Header() {
             />
           </Link>
 
-          <nav className="hidden items-center gap-0.5 lg:flex">
-            {site.nav.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
-                className="relative rounded-full px-1 py-1"
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive ? (
-                      <motion.span
-                        layoutId="nav-active-pill"
-                        className="absolute inset-0 rounded-full bg-gradient-to-r from-crimson to-[#e63946] shadow-md shadow-crimson/25"
-                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                      />
-                    ) : null}
-                    <span
-                      className={cn(
-                        'relative z-10 block rounded-full px-3.5 py-2 text-sm font-semibold transition-colors duration-200',
-                        isActive
-                          ? 'text-white'
-                          : 'text-charcoal/65 hover:bg-crimson/[0.06] hover:text-crimson',
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </nav>
+          {dashboardView ? (
+            loading ? (
+              <div className="h-10 w-10" aria-hidden />
+            ) : user ? (
+              <AccountActions />
+            ) : (
+              <div className="h-10 w-10" aria-hidden />
+            )
+          ) : (
+            <>
+              <MainNav className="hidden lg:flex" />
 
-          <div className="flex items-center gap-2">
-            <NavSecondaryButton className="hidden md:inline-flex" />
-            <NavTrialButton className="hidden sm:inline-flex" onClick={() => openTrial()} />
-            <button
-              type="button"
-              className="rounded-full p-2 text-charcoal transition-colors hover:bg-crimson/5 hover:text-crimson lg:hidden"
-              aria-label="Toggle menu"
-              onClick={() => setMobileOpen((v) => !v)}
-            >
-              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+              <div className="flex items-center gap-2">
+                {loading ? (
+                  <div className="hidden h-10 w-24 md:block" aria-hidden />
+                ) : user ? (
+                  <AccountActions />
+                ) : (
+                  <NavSecondaryButton className="hidden md:inline-flex" />
+                )}
+                {!loading && !user ? (
+                  <NavTrialButton className="hidden sm:inline-flex" onClick={() => openTrial()} />
+                ) : null}
+                <button
+                  type="button"
+                  className="rounded-full p-2 text-charcoal transition-colors hover:bg-crimson/5 hover:text-crimson lg:hidden"
+                  aria-label="Toggle menu"
+                  onClick={() => setMobileOpen((v) => !v)}
+                >
+                  {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
-        {mobileOpen && (
+        {!dashboardView && mobileOpen ? (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -183,11 +226,13 @@ export function Header() {
                   {item.label}
                 </NavLink>
               ))}
-              <NavSecondaryButton fullWidth className="mt-3" />
-              <NavTrialButton fullWidth className="mt-2" onClick={() => openTrial()} />
+              {!user ? <NavSecondaryButton fullWidth className="mt-3" /> : null}
+              {!loading && !user ? (
+                <NavTrialButton fullWidth className="mt-2" onClick={() => openTrial()} />
+              ) : null}
             </div>
           </motion.div>
-        )}
+        ) : null}
       </div>
     </header>
   )

@@ -128,7 +128,7 @@ export function HeroSection({ aside }: { aside?: ReactNode }) {
             variants={fadeUp}
             className="mt-5 text-xl font-medium text-white/90 sm:text-2xl md:text-3xl"
           >
-            Small-batch live tuition for {site.syllabusCoverage}
+            Small-batch live tuition for CBSE & ICSE. IGCSE one-to-one.
           </motion.h1>
 
           <motion.p

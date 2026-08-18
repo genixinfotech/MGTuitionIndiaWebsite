@@ -14,7 +14,7 @@ const testimonials = [
   {
     name: 'Rajesh K.',
     place: 'Thiruvananthapuram',
-    subject: 'Kerala SSLC',
+    subject: 'IGCSE Maths',
     text: 'Clear updates after every week. We finally knew exactly where our son stood before the board exams.',
     accent: 'indigo',
   },

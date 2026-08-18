@@ -76,7 +76,7 @@ export function AboutPage() {
             IdealMG Educare — <HeroHighlight>tutoring with a conscience</HeroHighlight>
           </>
         }
-        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around CBSE, ICSE and Kerala State Board in very small batches."
+        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only."
       />
 
       {/* What we stand for */}

@@ -7,17 +7,18 @@ import { useAuth } from '@/context/AuthContext'
 import { site } from '@/lib/site'
 
 export function SignUpPage() {
-  const { user, login } = useAuth()
+  const { user, loading, signup, homePath } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'loading'>('idle')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'confirm'>('idle')
   const [error, setError] = useState('')
 
+  if (loading) return null
   if (user) {
-    return <Navigate to="/portal" replace />
+    return <Navigate to={homePath} replace />
   }
 
   async function onSubmit(e: FormEvent) {
@@ -25,8 +26,12 @@ export function SignUpPage() {
     setError('')
     setStatus('loading')
     try {
-      await login(email, password)
-      navigate('/portal', { replace: true })
+      const result = await signup(name, email, password)
+      if (result.needsConfirmation) {
+        setStatus('confirm')
+        return
+      }
+      navigate(homePath, { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create your account. Please try again.')
       setStatus('idle')
@@ -44,6 +49,11 @@ export function SignUpPage() {
               </h2>
               <p className="mt-2 text-sm text-charcoal/55">Sign up for the {site.brand} portal.</p>
 
+              {status === 'confirm' ? (
+                <p className="mt-7 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                  Check your inbox to confirm the account, then sign in.
+                </p>
+              ) : (
               <form onSubmit={onSubmit} className="mt-7 space-y-4">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-charcoal/45">
@@ -133,6 +143,7 @@ export function SignUpPage() {
                   )}
                 </button>
               </form>
+              )}
 
               <p className="mt-6 text-center text-sm text-charcoal/50">
                 Already have an account?{' '}

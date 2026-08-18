@@ -1,4 +1,5 @@
 import { site } from './site'
+import { recordEnquiry } from './crm'
 
 export type TrialPayload = {
   name: string
@@ -43,7 +44,21 @@ async function postForm(kind: 'trial' | 'contact' | 'tutor', data: object): Prom
     }
   }
 
-  if (response.ok && payload?.ok) return { ok: true }
+  if (response.ok && payload?.ok) {
+    const fields = data as Record<string, string>
+    void recordEnquiry({
+      kind,
+      name: fields.name ?? '',
+      email: fields.email ?? '',
+      phone: fields.phone,
+      payload: Object.fromEntries(
+        Object.entries(fields)
+          .filter(([, value]) => typeof value === 'string' && value)
+          .map(([key, value]) => [key, String(value)]),
+      ),
+    })
+    return { ok: true }
+  }
 
   throw new Error(
     payload?.error ||

@@ -4,10 +4,9 @@ import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { HeroSection } from '@/components/sections/HeroSection'
 import { useAuth } from '@/context/AuthContext'
-import { site } from '@/lib/site'
 
 export function LoginPage() {
-  const { user, login } = useAuth()
+  const { user, loading, login, configured, homePath } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,8 +14,9 @@ export function LoginPage() {
   const [status, setStatus] = useState<'idle' | 'loading'>('idle')
   const [error, setError] = useState('')
 
+  if (loading) return null
   if (user) {
-    return <Navigate to="/portal" replace />
+    return <Navigate to={homePath} replace />
   }
 
   async function onSubmit(e: FormEvent) {
@@ -24,8 +24,8 @@ export function LoginPage() {
     setError('')
     setStatus('loading')
     try {
-      await login(email, password)
-      navigate('/portal', { replace: true })
+      const { path } = await login(email, password)
+      navigate(path, { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in. Please try again.')
       setStatus('idle')
@@ -41,7 +41,7 @@ export function LoginPage() {
               <h2 className="text-2xl font-extrabold tracking-tight text-charcoal md:text-3xl">
                 Welcome back
               </h2>
-              <p className="mt-2 text-sm text-charcoal/55">Sign in to your {site.brand} portal.</p>
+              <p className="mt-2 text-sm text-charcoal/55">Sign in as a parent, student, consultant, or staff.</p>
 
               <form onSubmit={onSubmit} className="mt-7 space-y-4">
                 <label className="block">
@@ -98,7 +98,7 @@ export function LoginPage() {
                     <input type="checkbox" className="accent-crimson" />
                     Remember me
                   </label>
-                  <Link to="/contact" className="font-semibold text-crimson hover:text-crimson-dark">
+                  <Link to="/forgot-password" className="font-semibold text-crimson hover:text-crimson-dark">
                     Forgot password?
                   </Link>
                 </div>
@@ -106,6 +106,12 @@ export function LoginPage() {
                 {error ? (
                   <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-3 py-2 text-sm text-crimson">
                     {error}
+                  </p>
+                ) : null}
+                {!configured ? (
+                  <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-3 py-2 text-sm text-crimson">
+                    Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to
+                    .env, then restart the app.
                   </p>
                 ) : null}
 
