@@ -65,7 +65,8 @@ export function ForgotPasswordPage() {
                   </label>
                   {!configured ? (
                     <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-3 py-2 text-sm text-crimson">
-                      Supabase is not configured on this environment yet.
+                      Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
+                      to your Plesk Node.js custom environment variables, then restart the app.
                     </p>
                   ) : null}
                   {error ? (

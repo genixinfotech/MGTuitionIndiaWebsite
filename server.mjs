@@ -4,6 +4,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createEmailMiddleware } from './server/zeptomail.mjs'
 import { createStudentsMiddleware } from './server/students.mjs'
+import {
+  createPublicConfigMiddleware,
+  injectPublicConfig,
+  readPublicConfig,
+} from './server/public-config.mjs'
 
 const Passenger = globalThis.PhusionPassenger
 if (Passenger) {
@@ -44,6 +49,7 @@ function loadDotEnv() {
 loadDotEnv()
 const emailMiddleware = createEmailMiddleware(process.env)
 const studentsMiddleware = createStudentsMiddleware(process.env)
+const publicConfigMiddleware = createPublicConfigMiddleware(process.env)
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -61,6 +67,12 @@ const mime = {
 
 function sendFile(res, filePath) {
   const ext = path.extname(filePath)
+  if (path.basename(filePath) === 'index.html') {
+    const html = fs.readFileSync(filePath, 'utf8')
+    res.setHeader('Content-Type', mime['.html'])
+    res.end(injectPublicConfig(html, readPublicConfig(process.env)))
+    return
+  }
   res.setHeader('Content-Type', mime[ext] || 'application/octet-stream')
   fs.createReadStream(filePath).pipe(res)
 }
@@ -75,6 +87,11 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/students') {
     await studentsMiddleware(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/public-config') {
+    publicConfigMiddleware(req, res)
     return
   }
 

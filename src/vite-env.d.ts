@@ -8,3 +8,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface Window {
+  __MG_PUBLIC_CONFIG__?: {
+    supabaseUrl?: string
+    supabaseKey?: string
+  }
+}

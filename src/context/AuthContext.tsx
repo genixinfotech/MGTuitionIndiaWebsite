@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured()) {
       setLoading(false)
       return
     }
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured()) {
       setSession(null)
       setProfile(null)
       return
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       profile,
       loading,
-      configured: isSupabaseConfigured,
+      configured: isSupabaseConfigured(),
       login,
       signup,
       logout,

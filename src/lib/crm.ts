@@ -8,7 +8,7 @@ export async function recordEnquiry(input: {
   phone?: string
   payload?: Record<string, string>
 }) {
-  if (!isSupabaseConfigured) return
+  if (!isSupabaseConfigured()) return
   try {
     const supabase = getSupabase()
     const {
