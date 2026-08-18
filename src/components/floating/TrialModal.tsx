@@ -16,7 +16,17 @@ import { FormField, fieldClass } from '@/components/forms/FormField'
 import { FormSuccess } from '@/components/forms/FormSuccess'
 import { submitTrial } from '@/lib/email'
 import { site } from '@/lib/site'
-import { formatInr, tuitionPlans } from '@/lib/tuition-plans'
+import { plansForBoard, type PricingBoardId } from '@/lib/tuition-plans'
+
+function boardIdFromName(name: string): PricingBoardId {
+  if (name.includes('IGCSE')) return 'igcse'
+  if (name.includes('ICSE')) return 'icse'
+  return 'cbse'
+}
+
+function gradesForBoard(boardName: string) {
+  return plansForBoard(boardIdFromName(boardName))
+}
 
 const emptyForm = {
   name: '',
@@ -38,6 +48,12 @@ export function TrialModal() {
       setForm((f) => ({ ...f, plan: preselectedPlan }))
     }
   }, [isOpen, preselectedPlan])
+
+  useEffect(() => {
+    if (!form.plan) return
+    const valid = gradesForBoard(form.board).some((p) => p.grade === form.plan)
+    if (!valid) setForm((f) => ({ ...f, plan: '' }))
+  }, [form.board, form.plan])
 
   function handleClose() {
     closeTrial()
@@ -126,7 +142,7 @@ export function TrialModal() {
                 <form onSubmit={onSubmit} className="space-y-4 px-6 py-5">
                   {preselectedPlan ? (
                     <p className="rounded-xl border border-crimson/15 bg-crimson/5 px-3 py-2 text-sm font-medium text-crimson">
-                      Plan selected: {preselectedPlan}
+                      Grade selected: {preselectedPlan}
                     </p>
                   ) : null}
 
@@ -177,17 +193,17 @@ export function TrialModal() {
                         ))}
                       </select>
                     </FormField>
-                    <FormField label="Tuition plan" icon={CalendarDays}>
+                    <FormField label="Grade" icon={CalendarDays}>
                       <select
                         required
                         className={fieldClass(true)}
                         value={form.plan}
                         onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}
                       >
-                        <option value="">Select class</option>
-                        {tuitionPlans.map((p) => (
+                        <option value="">Select grade</option>
+                        {gradesForBoard(form.board).map((p) => (
                           <option key={p.grade} value={p.grade}>
-                            {p.grade} — {formatInr(p.rate)}/mo
+                            {p.grade}
                           </option>
                         ))}
                       </select>
@@ -197,7 +213,7 @@ export function TrialModal() {
                   <FormField label="Notes (optional)" icon={MessageSquare} iconAlign="top">
                     <textarea
                       className={`${fieldClass(true)} min-h-[88px] resize-none`}
-                      placeholder="Class 6 or above, subjects, goals"
+                      placeholder={site.notesPlaceholder}
                       value={form.message}
                       onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                     />

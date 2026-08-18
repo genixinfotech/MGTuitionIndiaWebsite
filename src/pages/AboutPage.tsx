@@ -55,11 +55,11 @@ const timeline = [
   {
     year: '2019–20',
     title: 'Growing reach',
-    text: 'International curricula grow — India hubs in Cherthala and Kottayam strengthen operations.',
+    text: site.aboutTimelineReach,
   },
   {
     year: 'Today',
-    title: 'MG Tuition India',
+    title: site.name,
     text: `Focused on ${site.syllabusCoverage} — very small batches, every session.`,
   },
 ]
@@ -76,7 +76,7 @@ export function AboutPage() {
             IdealMG Educare — <HeroHighlight>tutoring with a conscience</HeroHighlight>
           </>
         }
-        description="Since 2015, IdealMG Educare has delivered live online tuition from Kerala — personal, honest, and built around CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only."
+        description={site.aboutHeroDescription}
       />
 
       {/* What we stand for */}
@@ -98,7 +98,7 @@ export function AboutPage() {
           </h2>
           <p className="mt-3 text-charcoal/55">
             {site.people.founder.name} started {site.brand} when good tuition felt too costly, too
-            crowded, or too far away. These principles still guide every class we run in India today.
+            crowded, or too far away. {site.aboutPrinciplesLine}
           </p>
         </motion.div>
 
@@ -218,7 +218,7 @@ export function AboutPage() {
           </p>
           <h2 className="text-3xl font-extrabold text-charcoal md:text-4xl">A decade of growing alongside families</h2>
           <p className="mt-3 text-charcoal/55">
-            From a parent&apos;s idea to a trusted tutoring network across India and abroad.
+            {site.aboutJourneySubtitle}
           </p>
         </motion.div>
 
@@ -263,13 +263,12 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Kerala roots + CTA */}
       <section className="px-4 py-16 md:px-6 md:py-20">
         <div className="mx-auto grid max-w-7xl items-center gap-8 overflow-hidden rounded-[28px] bg-white shadow-lg ring-1 ring-charcoal/[0.06] lg:grid-cols-2">
           <div className="relative h-64 lg:h-full lg:min-h-[360px]">
             <img
-              src="/images/infopark-cherthala.jpg"
-              alt="IdealMG Educare office in Cherthala"
+              src={site.aboutLocationImage}
+              alt={site.aboutLocationImageAlt}
               className="h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/10 lg:bg-gradient-to-l lg:from-transparent lg:to-white/20" />
@@ -277,14 +276,13 @@ export function AboutPage() {
           <div className="px-8 pb-10 pt-6 lg:px-10 lg:py-10">
             <p className="inline-flex items-center gap-2 text-sm font-semibold text-crimson">
               <MapPin className="h-4 w-4" />
-              Rooted in Kerala
+              {site.aboutLocationEyebrow}
             </p>
             <h2 className="mt-3 text-2xl font-extrabold text-charcoal md:text-3xl">
-              Operating from Cherthala &amp; Kottayam
+              {site.aboutLocationTitle}
             </h2>
             <p className="mt-4 leading-relaxed text-charcoal/60">
-              {site.legal} runs regional hubs in Kerala while delivering live small-batch classes to
-              students across India — {site.syllabusCoverage}.
+              {site.aboutLocationBody} — {site.syllabusCoverage}.
             </p>
             <button
               type="button"

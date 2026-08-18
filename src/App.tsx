@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ScrollToTop } from '@/components/layout/ScrollToTop'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 import { AuthProvider } from '@/context/AuthContext'
 import { TrialProvider } from '@/context/TrialContext'
+import { site } from '@/lib/site'
 import { HomePage } from '@/pages/HomePage'
 import { SubjectsPage } from '@/pages/SubjectsPage'
 import { AboutPage } from '@/pages/AboutPage'
@@ -22,6 +24,17 @@ import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { StudentPortalPage } from '@/pages/StudentPortalPage'
 
 export default function App() {
+  useEffect(() => {
+    document.title = `${site.name} | Small-Batch Online Tuition`
+    const meta = document.querySelector('meta[name="description"]')
+    if (meta) {
+      meta.setAttribute(
+        'content',
+        `${site.name} — ${site.tagline}. ${site.legal}.`,
+      )
+    }
+  }, [])
+
   return (
     <BrowserRouter>
       <ScrollToTop />

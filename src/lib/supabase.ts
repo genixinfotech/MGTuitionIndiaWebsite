@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
 
 type PublicConfig = {
+  region?: string
   supabaseUrl?: string
   supabaseKey?: string
 }

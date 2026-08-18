@@ -1,5 +1,9 @@
+import { normalizeRegion } from './regions.mjs'
+
 export function readPublicConfig(env) {
+  const region = normalizeRegion(env.Region || env.VITE_REGION)
   return {
+    region,
     supabaseUrl: (env.VITE_SUPABASE_URL || env.SUPABASE_URL || '').trim(),
     supabaseKey: (env.VITE_SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '').trim(),
   }
@@ -28,6 +32,12 @@ export function createPublicConfigMiddleware(env) {
       res.end()
       return
     }
-    res.end(JSON.stringify({ ok: true, configured: Boolean(config.supabaseUrl && config.supabaseKey), ...config }))
+    res.end(
+      JSON.stringify({
+        ok: true,
+        configured: Boolean(config.supabaseUrl && config.supabaseKey),
+        ...config,
+      }),
+    )
   }
 }

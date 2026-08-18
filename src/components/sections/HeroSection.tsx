@@ -120,7 +120,7 @@ export function HeroSection({ aside }: { aside?: ReactNode }) {
               animate={{ backgroundPosition: ['0% center', '200% center'] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
             >
-              India
+              {site.regionLabel}
             </motion.span>
           </motion.p>
 

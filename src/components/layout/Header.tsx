@@ -12,23 +12,44 @@ import { AccountMenu } from '@/components/layout/AccountMenu'
 function NavSecondaryButton({
   className,
   fullWidth,
+  compact,
 }: {
   className?: string
   fullWidth?: boolean
+  compact?: boolean
 }) {
   return (
     <Link
       to="/login"
       className={cn(
         'group inline-flex items-center justify-center gap-2 rounded-full',
-        'bg-crimson/[0.06] px-5 py-2.5 text-sm font-semibold text-crimson',
+        'bg-crimson/[0.06] text-sm font-semibold text-crimson',
         'transition-colors duration-300 hover:bg-crimson/[0.12] hover:text-crimson-dark',
+        compact ? 'px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm' : 'px-5 py-2.5',
         fullWidth && 'w-full py-3.5',
         className,
       )}
     >
-      <LogIn className="h-3.5 w-3.5" />
+      <LogIn className={cn('text-crimson', compact ? 'h-3.5 w-3.5' : 'h-3.5 w-3.5')} />
       Login
+    </Link>
+  )
+}
+
+function NavDashboardButton({ className, compact }: { className?: string; compact?: boolean }) {
+  const { user } = useAuth()
+  if (!user) return null
+
+  return (
+    <Link
+      to={homePathForRole(user.role)}
+      className={cn(
+        'inline-flex items-center justify-center rounded-full bg-crimson/[0.06] font-semibold text-crimson transition-colors hover:bg-crimson/[0.12] hover:text-crimson-dark',
+        compact ? 'px-3 py-2 text-xs sm:px-4 sm:py-2 sm:text-sm' : 'px-4 py-2 text-sm',
+        className,
+      )}
+    >
+      {user.role === 'student' ? 'My classes' : 'Dashboard'}
     </Link>
   )
 }
@@ -101,18 +122,13 @@ function MainNav({ className }: { className?: string }) {
   )
 }
 
-function AccountActions() {
+function AccountActions({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth()
   if (!user) return null
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
-      <Link
-        to={homePathForRole(user.role)}
-        className="inline-flex items-center justify-center rounded-full bg-crimson/[0.06] px-4 py-2 text-sm font-semibold text-crimson transition-colors hover:bg-crimson/[0.12] hover:text-crimson-dark"
-      >
-        {user.role === 'student' ? 'My classes' : 'Dashboard'}
-      </Link>
+      <NavDashboardButton compact={compact} />
       <AccountMenu />
     </div>
   )
@@ -142,11 +158,20 @@ export function Header() {
       {!dashboardView ? (
         <div className="hidden bg-charcoal text-white/70 sm:block">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs md:px-6">
-            <a href={site.phoneHref} className="inline-flex items-center gap-2 transition hover:text-white">
-              <Phone className="h-3.5 w-3.5 text-crimson-light" />
-              {site.phoneDisplay}
-            </a>
-            <p>Offices in Cherthala &amp; Kottayam, Kerala</p>
+            {site.showPhone && site.phoneDisplay ? (
+              <a href={site.phoneHref} className="inline-flex items-center gap-2 transition hover:text-white">
+                <Phone className="h-3.5 w-3.5 text-crimson-light" />
+                {site.phoneDisplay}
+              </a>
+            ) : (
+              <a
+                href={`mailto:${site.email}`}
+                className="inline-flex items-center gap-2 transition hover:text-white"
+              >
+                {site.email}
+              </a>
+            )}
+            <p>{site.headerOfficeLine}</p>
           </div>
         </div>
       ) : null}
@@ -178,13 +203,23 @@ export function Header() {
             <>
               <MainNav className="hidden lg:flex" />
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {loading ? (
-                  <div className="hidden h-10 w-24 md:block" aria-hidden />
+                  <div className="h-9 w-16 animate-pulse rounded-full bg-charcoal/5 sm:w-24" aria-hidden />
                 ) : user ? (
-                  <AccountActions />
+                  <>
+                    <div className="lg:hidden">
+                      <AccountActions compact />
+                    </div>
+                    <div className="hidden lg:flex">
+                      <AccountActions />
+                    </div>
+                  </>
                 ) : (
-                  <NavSecondaryButton className="hidden md:inline-flex" />
+                  <>
+                    <NavSecondaryButton compact className="lg:hidden" />
+                    <NavSecondaryButton className="hidden lg:inline-flex" />
+                  </>
                 )}
                 {!loading && !user ? (
                   <NavTrialButton className="hidden sm:inline-flex" onClick={() => openTrial()} />
@@ -226,9 +261,8 @@ export function Header() {
                   {item.label}
                 </NavLink>
               ))}
-              {!user ? <NavSecondaryButton fullWidth className="mt-3" /> : null}
               {!loading && !user ? (
-                <NavTrialButton fullWidth className="mt-2" onClick={() => openTrial()} />
+                <NavTrialButton fullWidth className="mt-3" onClick={() => openTrial()} />
               ) : null}
             </div>
           </motion.div>

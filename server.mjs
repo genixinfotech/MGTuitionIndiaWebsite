@@ -9,6 +9,7 @@ import {
   injectPublicConfig,
   readPublicConfig,
 } from './server/public-config.mjs'
+import { getSiteBrand } from './server/regions.mjs'
 
 const Passenger = globalThis.PhusionPassenger
 if (Passenger) {
@@ -125,6 +126,7 @@ if (Passenger) {
   server.listen('passenger')
 } else {
   server.listen(port, () => {
-    console.log(`MG Tuition India listening on http://localhost:${port}`)
+    const { name, region } = getSiteBrand(process.env)
+    console.log(`${name} (${region}) listening on http://localhost:${port}`)
   })
 }

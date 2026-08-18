@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUp, MessageCircle } from 'lucide-react'
-import { whatsappUrl } from '@/lib/site'
+import { site, whatsappUrl } from '@/lib/site'
 
 export function FloatingActions() {
   const [showTop, setShowTop] = useState(false)
+  const hasWhatsapp = Boolean(site.whatsappNumber)
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 400)
@@ -32,18 +33,20 @@ export function FloatingActions() {
         )}
       </AnimatePresence>
 
-      <motion.a
-        href={whatsappUrl()}
-        target="_blank"
-        rel="noreferrer"
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.95 }}
-        className="flex items-center gap-2 rounded-full bg-whatsapp px-4 py-3 font-semibold text-white shadow-lg shadow-whatsapp/30"
-        aria-label="Chat on WhatsApp"
-      >
-        <MessageCircle className="h-5 w-5" />
-        <span className="hidden sm:inline">WhatsApp</span>
-      </motion.a>
+      {hasWhatsapp ? (
+        <motion.a
+          href={whatsappUrl()}
+          target="_blank"
+          rel="noreferrer"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center gap-2 rounded-full bg-whatsapp px-4 py-3 font-semibold text-white shadow-lg shadow-whatsapp/30"
+          aria-label="Chat on WhatsApp"
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span className="hidden sm:inline">WhatsApp</span>
+        </motion.a>
+      ) : null}
     </div>
   )
 }

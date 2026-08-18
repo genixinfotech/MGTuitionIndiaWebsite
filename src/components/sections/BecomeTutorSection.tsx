@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { site } from '@/lib/site'
 
 export function BecomeTutorSection() {
   return (
@@ -21,10 +22,10 @@ export function BecomeTutorSection() {
           viewport={{ once: true }}
           className="max-w-xl"
         >
-          <h2 className="text-3xl font-bold md:text-4xl">Teach with MG Tuition India</h2>
+          <h2 className="text-3xl font-bold md:text-4xl">Teach with {site.name}</h2>
           <p className="mt-3 text-white/80">
-            Join a growing network of tutors delivering small-batch CBSE and ICSE classes, plus
-            one-to-one IGCSE — with training, scheduling support, and steady student demand.
+            Join a growing network of tutors delivering small-batch {site.syllabusCoverage} classes
+            — with training, scheduling support, and steady student demand.
           </p>
         </motion.div>
         <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>

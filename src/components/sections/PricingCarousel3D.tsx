@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useTrial } from '@/context/TrialContext'
@@ -9,8 +9,8 @@ import {
   formatInr,
   formatSessionsLabel,
   parseGradeLabel,
+  plansForBoard,
   pricingBoards,
-  tuitionPlans,
   type PricingBoardId,
 } from '@/lib/tuition-plans'
 import { cn } from '@/lib/utils'
@@ -65,11 +65,17 @@ function getCardTransform(offset: number) {
 
 export function PricingCarousel3D() {
   const { openTrial } = useTrial()
-  const total = tuitionPlans.length
   const [board, setBoard] = useState<PricingBoardId>('cbse')
   const [active, setActive] = useState(0)
   const activeBoard = pricingBoards.find((item) => item.id === board) ?? pricingBoards[0]
   const batchLabel = batchLabelForBoard(board)
+  const showPrices = activeBoard.showPrices
+  const plans = plansForBoard(board)
+  const total = plans.length
+
+  useEffect(() => {
+    setActive(0)
+  }, [board])
 
   const goTo = useCallback(
     (index: number) => {
@@ -88,7 +94,7 @@ export function PricingCarousel3D() {
 
   const atStart = active === 0
   const atEnd = active === total - 1
-  const activePlan = tuitionPlans[active]
+  const activePlan = plans[active]
 
   return (
     <section
@@ -149,10 +155,12 @@ export function PricingCarousel3D() {
           viewport={{ once: true }}
           className="mt-10 flex justify-center"
         >
-          <PricingBoardTabs value={board} onChange={(next) => {
-            setBoard(next)
-            setActive(0)
-          }} />
+          <PricingBoardTabs
+            value={board}
+            onChange={(next) => {
+              setBoard(next)
+            }}
+          />
         </motion.div>
 
         <div key={board} className="relative mt-10 w-full">
@@ -191,7 +199,7 @@ export function PricingCarousel3D() {
               className="absolute inset-0 flex items-center justify-center"
               style={{ transformStyle: 'preserve-3d' }}
             >
-              {tuitionPlans.map((plan, index) => {
+              {plans.map((plan, index) => {
                 const offset = index - active
                 const transform = getCardTransform(offset)
                 const isActive = offset === 0
@@ -235,12 +243,18 @@ export function PricingCarousel3D() {
                           </span>
                         </div>
 
-                        <div className="mt-8 border-t border-charcoal/[0.08] pt-6">
-                          <p className="text-4xl font-extrabold tabular-nums text-crimson md:text-5xl">
-                            {formatInr(plan.rate)}
+                        {showPrices ? (
+                          <div className="mt-8 border-t border-charcoal/[0.08] pt-6">
+                            <p className="text-4xl font-extrabold tabular-nums text-crimson md:text-5xl">
+                              {formatInr(plan.rate)}
+                            </p>
+                            <p className="mt-2 text-sm font-medium text-charcoal/50">per month</p>
+                          </div>
+                        ) : (
+                          <p className="mt-8 border-t border-charcoal/[0.08] pt-6 text-sm font-medium text-charcoal/55">
+                            Contact us for a tailored quote after your free assessment.
                           </p>
-                          <p className="mt-2 text-sm font-medium text-charcoal/50">per month</p>
-                        </div>
+                        )}
 
                         <button
                           type="button"
@@ -266,14 +280,18 @@ export function PricingCarousel3D() {
                             Math.abs(offset) === 1 ? 'text-xl md:text-2xl' : 'text-lg',
                           )}
                         />
-                        <p
-                          className={cn(
-                            'mt-3 font-extrabold tabular-nums text-crimson',
-                            Math.abs(offset) === 1 ? 'text-2xl md:text-3xl' : 'text-xl',
-                          )}
-                        >
-                          {formatInr(plan.rate)}
-                        </p>
+                        {showPrices ? (
+                          <p
+                            className={cn(
+                              'mt-3 font-extrabold tabular-nums text-crimson',
+                              Math.abs(offset) === 1 ? 'text-2xl md:text-3xl' : 'text-xl',
+                            )}
+                          >
+                            {formatInr(plan.rate)}
+                          </p>
+                        ) : (
+                          <p className="mt-3 text-sm font-medium text-charcoal/50">Quote on request</p>
+                        )}
                       </button>
                     )}
                   </motion.div>
@@ -288,7 +306,7 @@ export function PricingCarousel3D() {
           </div>
 
           <div className="mt-4 flex items-center justify-center gap-2">
-            {tuitionPlans.map((plan, index) => (
+            {plans.map((plan, index) => (
               <button
                 key={`dot-${plan.grade}`}
                 type="button"
@@ -309,9 +327,15 @@ export function PricingCarousel3D() {
             {activeBoard.label} ·{' '}
             <span className="font-semibold text-white/75">
               <GradeLabel grade={activePlan.grade} />
-            </span>{' '}
-            · {formatInr(activePlan.rate)}/month
-            {activeBoard.oneToOne ? ' · one-to-one' : ` · ${batchSizeLabel} per batch`}
+            </span>
+            {showPrices ? (
+              <>
+                {' '}
+                · {formatInr(activePlan.rate)}/month · {batchSizeLabel} per batch
+              </>
+            ) : (
+              <> · one-to-one · quote on request</>
+            )}
           </p>
         </div>
       </div>

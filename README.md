@@ -1,8 +1,21 @@
-# MG Tuition India
+# MG Tuition
 
-Small-batch live online tuition marketing site for CBSE, ICSE, and IGCSE (one-to-one).
+Small-batch live online tuition marketing site for CBSE, ICSE, and IGCSE (one-to-one). One codebase serves **India** and **GCC** — switch with the `Region` environment variable.
 
 Built with Vite, React, TypeScript, Tailwind CSS, and Framer Motion.
+
+## Region
+
+Set **`Region=India`** or **`Region=GCC`** in Plesk Node.js custom environment variables (or in `.env` locally). The server injects the region into the page at runtime; no separate build per region is required.
+
+For local development, set **`VITE_REGION=India`** or **`VITE_REGION=GCC`** in `.env` (Vite reads this at dev/build time).
+
+| Region | Site name | Legal entity | Default email |
+|--------|-----------|--------------|---------------|
+| India | MG Tuition India | IdealMG Educare LLP | info@mgtuition.in |
+| GCC | MG Tuition GCC | IdealMG Educare FZC | info@mgtuition.ae |
+
+Region-specific copy, pricing, offices, and location dropdowns live in `src/lib/regions/india.ts` and `src/lib/regions/gcc.ts`.
 
 ## Setup
 
@@ -53,6 +66,6 @@ If the API is running and ZeptoMail still fails, add the **server’s public IP*
 
 ## Config
 
-Edit contact numbers, offices, boards, and copy in `src/lib/site.ts`.
+Contact numbers, offices, boards, pricing, and region copy are in `src/lib/regions/india.ts` and `src/lib/regions/gcc.ts`. Shared helpers resolve the active region from `Region` / `VITE_REGION` via `src/lib/region.ts`.
 
 Form submissions (assessment, contact, tutor) are emailed through ZeptoMail. The from-address in `.env` must be a sender verified on your ZeptoMail Agent.

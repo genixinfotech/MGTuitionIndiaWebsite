@@ -6,7 +6,7 @@ import { site } from '@/lib/site'
 const highlights = [
   { label: 'Since', value: '2015' },
   { label: 'Batch size', value: '6–8' },
-  { label: 'Hubs', value: 'Kerala' },
+  { label: 'Hubs', value: site.aboutTeaserHub },
 ]
 
 export function AboutTeaserSection() {
@@ -37,7 +37,7 @@ export function AboutTeaserSection() {
             <div className="rounded-2xl border border-white/60 bg-white/95 p-5 shadow-[0_20px_40px_-16px_rgba(45,45,45,0.28)] backdrop-blur-md">
               <p className="text-3xl font-extrabold tracking-tight text-crimson">Since 2015</p>
               <p className="mt-1 text-xs font-medium leading-relaxed text-charcoal/55">
-                Trusted by families across India &amp; abroad
+                {site.aboutTeaserTrustLine}
               </p>
             </div>
           </div>
@@ -62,9 +62,7 @@ export function AboutTeaserSection() {
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-charcoal/65">
             {site.people.founder.name} founded {site.brand} so no child is left behind because tuition
-            was too costly, too crowded, or too far away. From our Kerala hubs in Cherthala and
-            Kottayam, we deliver live classes in very small batches for CBSE and ICSE, and
-            one-to-one tuition for IGCSE.
+            was too costly, too crowded, or too far away. {site.aboutTeaserBody}
           </p>
 
           <div className="mt-8 grid grid-cols-3 gap-3">
@@ -73,7 +71,7 @@ export function AboutTeaserSection() {
                 key={item.label}
                 className="rounded-2xl border border-charcoal/[0.06] bg-[#f8fafc] px-3 py-4 text-center"
               >
-                <p className="text-xl font-extrabold text-charcoal md:text-2xl">{item.value}</p>
+                <p className="text-xl font-extrabold text-crimson">{item.value}</p>
                 <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-charcoal/45">
                   {item.label}
                 </p>
@@ -81,21 +79,17 @@ export function AboutTeaserSection() {
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-charcoal/50">
-            <span className="inline-flex items-center gap-1.5">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link to="/about" className="btn-primary inline-flex">
+              About {site.brand}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="inline-flex items-center gap-2 text-sm text-charcoal/55">
               <MapPin className="h-4 w-4 text-crimson" />
-              Cherthala &amp; Kottayam
-            </span>
-            <span className="inline-flex items-center gap-1.5">
               <Users className="h-4 w-4 text-crimson" />
-              Live classes, 6–8 per batch
-            </span>
+              Very small batches · Live online
+            </p>
           </div>
-
-          <Link to="/about" className="btn-primary mt-8 inline-flex">
-            Read our story
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </motion.div>
       </div>
     </section>

@@ -2,9 +2,12 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { getSiteBrand } from './regions.mjs'
 
 const KINDS = new Set(['trial', 'contact', 'tutor'])
 const MAX_BODY_BYTES = 50_000
+const SITE = getSiteBrand(process.env)
+const SITE_NAME = SITE.name
 const LOGO_CID = 'mgtuition-logo'
 const LOGO_PATH = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -108,8 +111,8 @@ function wrapHtml({ eyebrow, title, intro, rowsHtml, note }) {
           }
           <tr>
             <td style="padding:22px 32px;background:#120608;color:#ffffff;">
-              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#ffffff;">MG Tuition India</p>
-              <p style="margin:0 0 10px;font-size:12px;line-height:1.5;color:#f4c7c7;">Small-batch live tuition for CBSE, ICSE &amp; Kerala State Board · IdealMG Educare LLP</p>
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#ffffff;">${escapeHtml(SITE_NAME)}</p>
+              <p style="margin:0 0 10px;font-size:12px;line-height:1.5;color:#f4c7c7;">${escapeHtml(SITE.tagline)} · ${escapeHtml(SITE.legal)}</p>
               <p style="margin:0;font-size:11px;line-height:1.6;color:#c9b4b4;">This is a transactional notification from a website form, not a marketing email. Details are used only to respond to this enquiry and are not sold to third parties.</p>
             </td>
           </tr>
@@ -163,7 +166,7 @@ function buildStaffEmail(kind, data = {}) {
       htmlbody: wrapHtml({
         eyebrow: 'Free assessment',
         title: 'New assessment request',
-        intro: `${name} submitted a free assessment enquiry from the MG Tuition India website.`,
+        intro: `${name} submitted a free assessment enquiry from the ${SITE_NAME} website.`,
         rowsHtml,
         note: 'Reply directly to this email to reach the person who submitted the form.',
       }),
@@ -178,7 +181,7 @@ function buildStaffEmail(kind, data = {}) {
       htmlbody: wrapHtml({
         eyebrow: 'Website contact',
         title: 'New message received',
-        intro: `${name} sent a message from the MG Tuition India contact form.`,
+        intro: `${name} sent a message from the ${SITE_NAME} contact form.`,
         rowsHtml,
         note: 'Reply directly to this email to reach the person who submitted the form.',
       }),
@@ -192,7 +195,7 @@ function buildStaffEmail(kind, data = {}) {
     htmlbody: wrapHtml({
       eyebrow: 'Careers',
       title: 'New tutor application',
-      intro: `${name} applied to teach with MG Tuition India.`,
+      intro: `${name} applied to teach with ${SITE_NAME}.`,
       rowsHtml,
       note: 'Reply directly to this email to reach the applicant.',
     }),
@@ -208,12 +211,12 @@ function buildAckEmail(kind, data = {}) {
 
   if (kind === 'trial') {
     return {
-      subject: 'We received your free assessment request — MG Tuition India',
-      textbody: `Hi ${name},\n\nThank you for requesting a free assessment with MG Tuition India. Our team will review your details and contact you shortly.\n\n${textLines(pairs)}\n\n${note}`,
+      subject: `We received your free assessment request — ${SITE_NAME}`,
+      textbody: `Hi ${name},\n\nThank you for requesting a free assessment with ${SITE_NAME}. Our team will review your details and contact you shortly.\n\n${textLines(pairs)}\n\n${note}`,
       htmlbody: wrapHtml({
         eyebrow: 'Thank you',
         title: 'Your assessment request is in',
-        intro: `Hi ${name}, thanks for requesting a free assessment with MG Tuition India. A member of our team will review your details and get in touch shortly.`,
+        intro: `Hi ${name}, thanks for requesting a free assessment with ${SITE_NAME}. A member of our team will review your details and get in touch shortly.`,
         rowsHtml,
         note,
       }),
@@ -222,12 +225,12 @@ function buildAckEmail(kind, data = {}) {
 
   if (kind === 'contact') {
     return {
-      subject: 'We received your message — MG Tuition India',
-      textbody: `Hi ${name},\n\nThank you for contacting MG Tuition India. We have received your message and will get back to you shortly.\n\n${textLines(pairs)}\n\n${note}`,
+      subject: `We received your message — ${SITE_NAME}`,
+      textbody: `Hi ${name},\n\nThank you for contacting ${SITE_NAME}. We have received your message and will get back to you shortly.\n\n${textLines(pairs)}\n\n${note}`,
       htmlbody: wrapHtml({
         eyebrow: 'Thank you',
         title: 'We have received your message',
-        intro: `Hi ${name}, thanks for writing to MG Tuition India. Our team has your message and will reply as soon as we can.`,
+        intro: `Hi ${name}, thanks for writing to ${SITE_NAME}. Our team has your message and will reply as soon as we can.`,
         rowsHtml,
         note,
       }),
@@ -235,12 +238,12 @@ function buildAckEmail(kind, data = {}) {
   }
 
   return {
-    subject: 'We received your tutor application — MG Tuition India',
-    textbody: `Hi ${name},\n\nThank you for applying to teach with MG Tuition India. Our team will review your application and get back to you within a few working days.\n\n${textLines(pairs)}\n\n${note}`,
+    subject: `We received your tutor application — ${SITE_NAME}`,
+    textbody: `Hi ${name},\n\nThank you for applying to teach with ${SITE_NAME}. Our team will review your application and get back to you within a few working days.\n\n${textLines(pairs)}\n\n${note}`,
     htmlbody: wrapHtml({
       eyebrow: 'Thank you',
       title: 'Your application is in',
-      intro: `Hi ${name}, thanks for applying to teach with MG Tuition India. Our team will review your application and get back to you within a few working days.`,
+      intro: `Hi ${name}, thanks for applying to teach with ${SITE_NAME}. Our team will review your application and get back to you within a few working days.`,
       rowsHtml,
       note,
     }),
@@ -302,13 +305,13 @@ export async function sendZeptoMail(env, { kind, data }) {
   await postZeptoEmail(url, authorization, {
     from: {
       address: fromAddress,
-      name: env.ZEPTOMAIL_FROM_NAME?.trim() || 'MG Tuition India',
+      name: env.ZEPTOMAIL_FROM_NAME?.trim() || SITE_NAME,
     },
     to: [
       {
         email_address: {
           address: toAddress,
-          name: env.ZEPTOMAIL_TO_NAME?.trim() || 'MG Tuition India',
+          name: env.ZEPTOMAIL_TO_NAME?.trim() || SITE_NAME,
         },
       },
     ],
@@ -326,7 +329,7 @@ export async function sendZeptoMail(env, { kind, data }) {
     await postZeptoEmail(url, authorization, {
       from: {
         address: fromAddress,
-        name: env.ZEPTOMAIL_FROM_NAME?.trim() || 'MG Tuition India',
+        name: env.ZEPTOMAIL_FROM_NAME?.trim() || SITE_NAME,
       },
       to: [
         {
@@ -339,7 +342,7 @@ export async function sendZeptoMail(env, { kind, data }) {
       subject: ack.subject,
       htmlbody: ack.htmlbody,
       textbody: ack.textbody,
-      reply_to: [{ address: toAddress, name: env.ZEPTOMAIL_TO_NAME?.trim() || 'MG Tuition India' }],
+      reply_to: [{ address: toAddress, name: env.ZEPTOMAIL_TO_NAME?.trim() || SITE_NAME }],
     })
   }
 }

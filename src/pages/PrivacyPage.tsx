@@ -17,7 +17,7 @@ export function PrivacyPage() {
           <p>
             {site.legal} (&ldquo;we&rdquo;, &ldquo;us&rdquo;) operates {site.name}. This policy
             explains how we collect, use, and protect personal information when you use our website
-            or enquire about our tutoring services in India.
+            or enquire about our tutoring services in {site.regionLabel === 'GCC' ? 'the GCC' : 'India'}.
           </p>
 
           <h2 className="text-xl font-bold text-charcoal">Enrolment</h2>
@@ -60,7 +60,7 @@ export function PrivacyPage() {
             <a className="font-medium text-crimson hover:underline" href={`mailto:${site.email}`}>
               {site.email}
             </a>
-            . We will respond within a reasonable timeframe under applicable Indian law.
+            . We will respond within a reasonable timeframe under {site.privacyLaw}.
           </p>
 
           <h2 className="text-xl font-bold text-charcoal">Children</h2>

@@ -27,7 +27,7 @@ const features = [
   {
     icon: Timer,
     title: 'Flexible scheduling',
-    text: 'Sessions that fit school, exams, and family life across Indian time zones.',
+    text: site.schedulingFlexNote,
   },
   {
     icon: HeartHandshake,
@@ -42,13 +42,13 @@ export function WhyChooseUsPage() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="Why MG Tuition India"
+        eyebrow={`Why ${site.name}`}
         title={
           <>
             Personal tutoring that respects <HeroHighlight>your child&apos;s pace</HeroHighlight>
           </>
         }
-        description={`Curriculum-aligned. Progress-tracked. Designed for ${site.syllabusCoverage} from our Kerala hubs.`}
+        description={`Curriculum-aligned. Progress-tracked. Designed for ${site.syllabusCoverage} from ${site.legal}.`}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-12 md:px-6">

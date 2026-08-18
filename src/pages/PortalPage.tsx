@@ -31,7 +31,7 @@ import {
   emptyEnrolment,
   enrolmentGrades,
   enrolmentSyllabi,
-  indianStates,
+  locationOptions,
   type EnrolmentForm,
 } from '@/lib/enrolment'
 import { getSupabase } from '@/lib/supabase'
@@ -431,7 +431,7 @@ function PortalHome() {
                     onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
                   >
                     <option value="">Select state</option>
-                    {indianStates.map((state) => (
+                    {locationOptions.map((state) => (
                       <option key={state} value={state}>
                         {state}
                       </option>

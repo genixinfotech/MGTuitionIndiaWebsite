@@ -146,13 +146,15 @@ export function ContactPage() {
               </div>
             </motion.div>
           ))}
-          <a
-            href={site.phoneHref}
-            className="glass flex items-center gap-3 rounded-2xl p-5 transition hover:-translate-y-1"
-          >
-            <Phone className="h-5 w-5 text-crimson" />
-            <span className="font-medium">{site.phoneDisplay}</span>
-          </a>
+          {site.showPhone && site.phoneDisplay ? (
+            <a
+              href={site.phoneHref}
+              className="glass flex items-center gap-3 rounded-2xl p-5 transition hover:-translate-y-1"
+            >
+              <Phone className="h-5 w-5 text-crimson" />
+              <span className="font-medium">{site.phoneDisplay}</span>
+            </a>
+          ) : null}
           <a
             href={`mailto:${site.email}`}
             className="glass flex items-center gap-3 rounded-2xl p-5 transition hover:-translate-y-1"
@@ -160,16 +162,24 @@ export function ContactPage() {
             <Mail className="h-5 w-5 text-crimson" />
             <span className="font-medium">{site.email}</span>
           </a>
-          <div className="overflow-hidden rounded-2xl shadow-glass">
-            <iframe
-              title="Office map"
-              src={site.mapEmbed}
-              className="h-64 w-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-          </div>
+          {site.mapEmbed ? (
+            <div className="overflow-hidden rounded-2xl shadow-glass">
+              <iframe
+                title="Office map"
+                src={site.mapEmbed}
+                className="h-64 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="glass flex min-h-48 items-center justify-center rounded-2xl p-6 text-center">
+              <p className="text-sm text-charcoal/60">
+                Map and full office address will be published here soon.
+              </p>
+            </div>
+          )}
         </div>
       </section>
     </PageShell>

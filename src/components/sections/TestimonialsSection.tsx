@@ -106,11 +106,11 @@ export function TestimonialsSection() {
           <h2 className="text-4xl font-extrabold tracking-tight text-charcoal md:text-5xl">
             Trusted across{' '}
             <span className="bg-gradient-to-r from-crimson to-[#e63946] bg-clip-text text-transparent">
-              India
+              {site.regionLabel}
             </span>
           </h2>
           <p className="mt-4 text-lg text-charcoal/55">
-            Families from Kochi to Hyderabad — the same small-batch care, the same honest updates.
+            {site.testimonialSubtitle}
           </p>
 
           <div className="mt-7 inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-full border border-charcoal/10 bg-white px-5 py-2.5 text-sm text-charcoal/70 shadow-sm">

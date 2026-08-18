@@ -15,7 +15,11 @@ import { HeroHighlight, PageHero } from '@/components/layout/PageHero'
 import { FormDisclaimer } from '@/components/forms/FormDisclaimer'
 import { FormSuccess } from '@/components/forms/FormSuccess'
 import { submitTutor } from '@/lib/email'
+import { site } from '@/lib/site'
+import { getTuitionConfig } from '@/lib/region'
 import { cn } from '@/lib/utils'
+
+const { minEnrolmentGrade } = getTuitionConfig()
 
 const perks = [
   {
@@ -34,7 +38,7 @@ const perks = [
     lightColor: 'bg-emerald-100',
     iconColor: 'text-emerald-600',
     title: 'Steady student demand',
-    description: 'CBSE & ICSE small batches, plus IGCSE one-to-one, from Class 6 upward.',
+    description: `CBSE & ICSE small batches from Class ${minEnrolmentGrade} upward, plus IGCSE one-to-one.`,
   },
   {
     icon: GraduationCap,
@@ -52,7 +56,7 @@ const perks = [
     lightColor: 'bg-amber-100',
     iconColor: 'text-amber-600',
     title: 'Subjects in demand',
-    description: 'Maths, Science, English, and Social Science — matched to Indian board syllabi.',
+    description: `Maths, Science, English, and Social Science — matched to ${site.syllabusCoverage} syllabi.`,
   },
 ] as const
 

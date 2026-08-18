@@ -62,7 +62,7 @@ function BrandBlurb() {
         {site.tagline}. Live online classes in very small batches — from {site.legal}.
       </p>
       <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-        Trusted since 2015 · Kerala &amp; across India
+        {site.footerBadge}
       </p>
     </div>
   )
@@ -87,23 +87,23 @@ function OfficeCard({ office }: { office: (typeof site.offices)[number] }) {
 }
 
 function ContactDetails() {
-  const kottayam = site.offices.find((office) => office.id === 'kottayam')
-  const cherthala = site.offices.find((office) => office.id === 'cherthala')
-
   return (
-    <div className="grid items-stretch gap-4 md:grid-cols-3">
-      {kottayam ? <OfficeCard office={kottayam} /> : null}
-      {cherthala ? <OfficeCard office={cherthala} /> : null}
+    <div className="grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
+      {site.offices.map((office) => (
+        <OfficeCard key={office.id} office={office} />
+      ))}
       <div className="flex h-full flex-col justify-center gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-4">
-        <a
-          href={site.phoneHref}
-          className="flex items-center gap-3 text-sm text-white/85 transition-colors hover:text-white"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
-            <Phone className="h-4 w-4 text-crimson-light" />
-          </span>
-          {site.phoneDisplay}
-        </a>
+        {site.showPhone && site.phoneDisplay ? (
+          <a
+            href={site.phoneHref}
+            className="flex items-center gap-3 text-sm text-white/85 transition-colors hover:text-white"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson/30">
+              <Phone className="h-4 w-4 text-crimson-light" />
+            </span>
+            {site.phoneDisplay}
+          </a>
+        ) : null}
         <a
           href={`mailto:${site.email}`}
           className="flex items-center gap-3 text-sm text-white/85 transition-colors hover:text-white"
@@ -119,53 +119,41 @@ function ContactDetails() {
 }
 
 function SignedInFooterColumns() {
-  const kottayam = site.offices.find((office) => office.id === 'kottayam')
-  const cherthala = site.offices.find((office) => office.id === 'cherthala')
-
   return (
-    <div className="grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-10 lg:py-12">
+    <div className="grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr] lg:gap-10 lg:py-12">
       <div>
         <FooterHeading>About</FooterHeading>
         <p className="text-sm leading-relaxed text-white/65">
           {site.tagline}. Live online classes in very small batches — from {site.legal}.
         </p>
         <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-          Trusted since 2015 · Kerala &amp; across India
+          {site.footerBadge}
         </p>
       </div>
 
-      {kottayam ? (
-        <div>
-          <FooterHeading>{kottayam.label}</FooterHeading>
+      {site.offices.map((office) => (
+        <div key={office.id}>
+          <FooterHeading>{office.label}</FooterHeading>
           <div className="space-y-1 text-sm text-white/65">
-            {kottayam.lines.map((line) => (
+            {office.lines.map((line) => (
               <p key={line}>{line}</p>
             ))}
           </div>
         </div>
-      ) : null}
-
-      {cherthala ? (
-        <div>
-          <FooterHeading>{cherthala.label}</FooterHeading>
-          <div className="space-y-1 text-sm text-white/65">
-            {cherthala.lines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      ))}
 
       <div>
         <FooterHeading>Contact</FooterHeading>
         <div className="space-y-3 text-sm">
-          <a
-            href={site.phoneHref}
-            className="flex items-center gap-2.5 text-white/75 transition-colors hover:text-white"
-          >
-            <Phone className="h-4 w-4 shrink-0 text-crimson-light" />
-            {site.phoneDisplay}
-          </a>
+          {site.showPhone && site.phoneDisplay ? (
+            <a
+              href={site.phoneHref}
+              className="flex items-center gap-2.5 text-white/75 transition-colors hover:text-white"
+            >
+              <Phone className="h-4 w-4 shrink-0 text-crimson-light" />
+              {site.phoneDisplay}
+            </a>
+          ) : null}
           <a
             href={`mailto:${site.email}`}
             className="flex items-center gap-2.5 text-white/75 transition-colors hover:text-white"
@@ -183,6 +171,7 @@ export function Footer() {
   const { openTrial } = useTrial()
   const { user } = useAuth()
   const year = new Date().getFullYear()
+  const hasWhatsapp = Boolean(site.whatsappNumber)
 
   if (user) {
     return (
@@ -227,15 +216,17 @@ export function Footer() {
                 {site.assessmentCta}
                 <ArrowRight className="h-4 w-4" />
               </button>
-              <a
-                href={whatsappUrl()}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/15"
-              >
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp us
-              </a>
+              {hasWhatsapp ? (
+                <a
+                  href={whatsappUrl()}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/15"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp us
+                </a>
+              ) : null}
             </div>
           </div>
         </div>
