@@ -145,7 +145,7 @@ export function PricingCarousel3D() {
             </span>
           </h2>
           <p className="mt-5 text-xl text-white/65">
-            Browse monthly fees by class — swipe or use the arrows to compare.
+            Explore tuition plans by class — swipe or use the arrows to compare.
           </p>
         </motion.div>
 
@@ -229,29 +229,31 @@ export function PricingCarousel3D() {
                   >
                     {isActive ? (
                       <>
-                        <GradeLabel
-                          grade={plan.grade}
-                          className="text-2xl font-bold text-charcoal md:text-3xl"
-                        />
+                        <div className="flex w-full flex-col items-center text-center">
+                          <GradeLabel
+                            grade={plan.grade}
+                            className="text-2xl font-bold text-charcoal md:text-3xl"
+                          />
 
-                        <div className="mt-6 flex flex-wrap gap-2">
-                          <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
-                            {formatSessionsLabel(plan)} / month
-                          </span>
-                          <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
-                            {activeBoard.oneToOne ? batchLabel : `${batchSizeLabel} students`}
-                          </span>
+                          <div className="mt-6 flex flex-wrap justify-center gap-2">
+                            <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
+                              {formatSessionsLabel(plan)} / month
+                            </span>
+                            <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
+                              {activeBoard.oneToOne ? batchLabel : `${batchSizeLabel} students`}
+                            </span>
+                          </div>
                         </div>
 
                         {showPrices ? (
-                          <div className="mt-8 border-t border-charcoal/[0.08] pt-6">
+                          <div className="mt-8 border-t border-charcoal/[0.08] pt-6 text-center">
                             <p className="text-4xl font-extrabold tabular-nums text-crimson md:text-5xl">
                               {formatInr(plan.rate)}
                             </p>
                             <p className="mt-2 text-sm font-medium text-charcoal/50">per month</p>
                           </div>
                         ) : (
-                          <p className="mt-8 border-t border-charcoal/[0.08] pt-6 text-sm font-medium text-charcoal/55">
+                          <p className="mt-8 border-t border-charcoal/[0.08] pt-6 text-center text-base font-bold leading-relaxed text-charcoal/75 md:text-lg">
                             Contact us for a tailored quote after your free assessment.
                           </p>
                         )}
@@ -333,8 +335,10 @@ export function PricingCarousel3D() {
                 {' '}
                 · {formatInr(activePlan.rate)}/month · {batchSizeLabel} per batch
               </>
-            ) : (
+            ) : activeBoard.oneToOne ? (
               <> · one-to-one · quote on request</>
+            ) : (
+              <> · quote on request</>
             )}
           </p>
         </div>

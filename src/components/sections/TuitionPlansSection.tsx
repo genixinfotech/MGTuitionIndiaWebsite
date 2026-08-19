@@ -12,7 +12,6 @@ import {
   parseGradeLabel,
   plansForBoard,
   pricingBoards,
-  pricingReady,
   type PricingBoardId,
 } from '@/lib/tuition-plans'
 import { site } from '@/lib/site'
@@ -253,11 +252,11 @@ export function TuitionPlansSection() {
           className="mt-10 flex flex-col items-center gap-4 text-center"
         >
           <p className="max-w-lg text-base text-white/55">
-            {!pricingReady
-              ? `${activeBoard.label} pricing will be published soon. Grades ${minEnrolmentGrade}–${Math.min(9, maxEnrolmentGrade)} include 8 sessions per month; Grades 10–${maxEnrolmentGrade} include 12 sessions. Contact us for a tailored quote.`
-              : showPrices
-                ? `${activeBoard.label} prices are monthly, per subject path in very small batches of ${batchSizeLabel} students. Grades ${minEnrolmentGrade}–9 include 8 sessions per month; Grades 10–${maxEnrolmentGrade} include 12 sessions per month.`
-                : 'IGCSE tuition is one-to-one only, Classes 6–12. Grades 6–9 include 8 sessions per month; Grades 10–12 include 12 sessions. Contact us for a tailored quote.'}
+            {!showPrices
+              ? activeBoard.oneToOne
+                ? 'IGCSE tuition is one-to-one only, Classes 6–12. Grades 6–9 include 8 sessions per month; Grades 10–12 include 12 sessions. Contact us for a tailored quote.'
+                : `${activeBoard.label} — very small batches of ${batchSizeLabel} students. Grades ${minEnrolmentGrade}–9 include 8 sessions per month; Grades 10–${maxEnrolmentGrade} include 12 sessions. Contact us for a tailored quote.`
+              : `${activeBoard.label} prices are monthly, per subject path in very small batches of ${batchSizeLabel} students. Grades ${minEnrolmentGrade}–9 include 8 sessions per month; Grades 10–${maxEnrolmentGrade} include 12 sessions per month.`}
           </p>
           <button type="button" onClick={() => openTrial()} className="btn-primary text-base">
             {site.assessmentCta}

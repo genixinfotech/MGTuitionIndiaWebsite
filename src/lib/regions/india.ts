@@ -233,12 +233,12 @@ export const indiaRegion: RegionBundle = {
   tuition: {
     batchSizeLabel: '6–8',
     pricingBoards: [
-      { id: 'cbse', label: 'CBSE', oneToOne: false, showPrices: true },
-      { id: 'icse', label: 'ICSE', oneToOne: false, showPrices: true },
+      { id: 'cbse', label: 'CBSE', oneToOne: false, showPrices: false },
+      { id: 'icse', label: 'ICSE', oneToOne: false, showPrices: false },
       { id: 'igcse', label: 'IGCSE', oneToOne: true, showPrices: false },
     ],
     tuitionPlans,
-    pricingReady: true,
+    pricingReady: false,
     currency: 'INR',
     formatPrice: formatInr,
     plansForBoard,
