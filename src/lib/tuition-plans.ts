@@ -9,6 +9,18 @@ export const pricingReady = tuition.pricingReady
 export const minEnrolmentGrade = tuition.minEnrolmentGrade
 export const maxEnrolmentGrade = tuition.maxEnrolmentGrade
 
+export type ClassTimingSlot = {
+  start: string
+  end: string
+}
+
+export const classTimings: readonly ClassTimingSlot[] = [
+  { start: '4:00 pm', end: '5:00 pm' },
+  { start: '5:15 pm', end: '6:15 pm' },
+  { start: '6:30 pm', end: '7:30 pm' },
+  { start: '7:45 pm', end: '8:45 pm' },
+]
+
 export type PricingBoardId = (typeof pricingBoards)[number]['id']
 export type TuitionPlanGrade = (typeof tuitionPlans)[number]['grade']
 
@@ -33,10 +45,11 @@ export function monthlyRateForGrade(grade: string | null | undefined) {
 }
 
 export function formatSessionsLabel(plan: { sessionsMin: number; sessionsMax: number }) {
-  if (plan.sessionsMin === plan.sessionsMax) {
-    return `${plan.sessionsMin} sessions`
-  }
-  return `${plan.sessionsMin}–${plan.sessionsMax} sessions`
+  const count =
+    plan.sessionsMin === plan.sessionsMax
+      ? plan.sessionsMin
+      : `${plan.sessionsMin}–${plan.sessionsMax}`
+  return `${count} Sessions / Month (1 Hour Each)`
 }
 
 /** Split grade labels like "6th Grade/Class" for superscript rendering. */

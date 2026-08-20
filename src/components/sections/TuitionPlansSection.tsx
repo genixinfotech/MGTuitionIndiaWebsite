@@ -17,6 +17,7 @@ import {
 import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { PricingBoardTabs } from '@/components/pricing/PricingBoardTabs'
+import { ClassTimings } from '@/components/pricing/ClassTimings'
 import { pricingBoardThemes } from '@/lib/boards'
 
 function GradeLabel({ grade, className }: { grade: string; className?: string }) {
@@ -50,11 +51,13 @@ export function TuitionPlansSection() {
   const activeBoard = pricingBoards.find((item) => item.id === board) ?? pricingBoards[0]
   const batchLabel = batchLabelForBoard(board)
   const showPrices = activeBoard.showPrices
+  const showTimings = !showPrices
   const plans = plansForBoard(board)
-  const planCols = showPrices
-    ? 'md:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_14rem]'
-    : 'md:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(0,1fr)_14rem]'
-  const rowSpan = showPrices ? 'col-span-5' : 'col-span-4'
+  const planGridCols =
+    showPrices || showTimings
+      ? 'md:grid-cols-[minmax(8rem,0.82fr)_minmax(11.5rem,1.45fr)_minmax(8rem,0.88fr)_minmax(7.25rem,0.72fr)_minmax(10rem,auto)]'
+      : 'md:grid-cols-[minmax(8rem,0.9fr)_minmax(11.5rem,1.4fr)_minmax(8rem,0.85fr)_minmax(10rem,auto)]'
+  const rowSpan = showPrices || showTimings ? 'col-span-5' : 'col-span-4'
 
   return (
     <section
@@ -127,28 +130,30 @@ export function TuitionPlansSection() {
             pricingBoardThemes[board].panelBorder,
           )}
         >
-          <PricingBoardTabs attached value={board} onChange={setBoard} />
           <div className="p-3 md:p-5">
-            <div className={cn('hidden gap-x-4 gap-y-2.5 md:grid', planCols)}>
-              <div className={cn('grid grid-cols-subgrid px-5 py-2', rowSpan)}>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  Grade / Class
+            <PricingBoardTabs attached value={board} onChange={setBoard} />
+            <div className={cn('mt-2.5 hidden md:grid gap-x-4 gap-y-2.5', planGridCols)}>
+              <p className="self-end pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Grade / Class
+              </p>
+              <p className="self-end pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Sessions / month
+              </p>
+              <p className="self-end whitespace-nowrap pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                {activeBoard.oneToOne ? 'Format' : 'Students / batch'}
+              </p>
+              {showPrices ? (
+                <p className="self-end pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Rate
                 </p>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  Sessions / month
+              ) : showTimings ? (
+                <p className="justify-self-start self-end whitespace-nowrap pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Timings
                 </p>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  {activeBoard.oneToOne ? 'Format' : 'Students / batch'}
-                </p>
-                {showPrices ? (
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                    Rate
-                  </p>
-                ) : null}
-                <p className="text-right text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  Action
-                </p>
-              </div>
+              ) : null}
+              <p className="justify-self-end self-end pb-1 text-right text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+                Action
+              </p>
 
               {plans.map((plan, i) => (
                 <motion.div
@@ -157,7 +162,7 @@ export function TuitionPlansSection() {
                   animate={planRowMotion.animate}
                   transition={planRowMotion.transition(i)}
                   className={cn(
-                    'group relative grid grid-cols-subgrid items-center overflow-hidden rounded-[22px] bg-white/[0.07] px-5 py-4 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:shadow-[0_16px_40px_-12px_rgba(204,0,0,0.65)] hover:ring-white/25',
+                    'group relative grid grid-cols-subgrid items-center gap-x-4 overflow-hidden rounded-[22px] bg-white/[0.07] px-4 py-4 ring-1 ring-white/10 transition-all duration-300 hover:bg-gradient-to-r hover:from-crimson hover:via-[#e63946] hover:to-[#9b1020] hover:shadow-[0_16px_40px_-12px_rgba(204,0,0,0.65)] hover:ring-white/25',
                     rowSpan,
                   )}
                 >
@@ -168,21 +173,21 @@ export function TuitionPlansSection() {
 
                   <GradeLabel
                     grade={plan.grade}
-                    className="relative text-base font-semibold text-white"
+                    className="relative min-w-0 justify-self-start text-base font-semibold text-white"
                   />
 
-                  <span className="relative inline-flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-sm font-medium text-white/80 transition-colors group-hover:border-white/20 group-hover:bg-white/20 group-hover:text-white">
-                    <CalendarDays className="h-3.5 w-3.5 opacity-80" />
+                  <span className="relative inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-start rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium leading-snug text-white/80 transition-colors group-hover:border-white/20 group-hover:bg-white/20 group-hover:text-white md:text-sm">
+                    <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-80" />
                     {formatSessionsLabel(plan)}
                   </span>
 
-                  <span className="relative inline-flex items-center gap-1.5 text-base font-semibold tabular-nums text-white">
-                    <Users className="h-4 w-4 text-white/50 transition-colors group-hover:text-white/80" />
+                  <span className="relative inline-flex min-w-0 items-center gap-1.5 justify-self-start text-base font-semibold tabular-nums text-white">
+                    <Users className="h-4 w-4 shrink-0 text-white/50 transition-colors group-hover:text-white/80" />
                     {batchLabel}
                   </span>
 
                   {showPrices ? (
-                    <div className="relative">
+                    <div className="relative min-w-0 justify-self-start">
                       <p className="font-outfit text-2xl font-extrabold tabular-nums text-white">
                         {formatInr(plan.rate)}
                       </p>
@@ -190,21 +195,28 @@ export function TuitionPlansSection() {
                         per month
                       </p>
                     </div>
+                  ) : showTimings ? (
+                    <ClassTimings
+                      compact
+                      layout="list"
+                      className="relative min-w-0 justify-self-start"
+                      timeClassName="font-medium text-white/75 transition-colors group-hover:text-white"
+                    />
                   ) : null}
 
                   <button
                     type="button"
                     onClick={() => openTrial({ plan: plan.grade })}
-                    className="relative inline-flex items-center gap-1.5 justify-self-end rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.03] group-hover:border-transparent group-hover:bg-white group-hover:text-crimson group-hover:shadow-lg group-hover:shadow-black/10"
+                    className="relative inline-flex min-w-0 items-center gap-1.5 justify-self-end rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.03] group-hover:border-transparent group-hover:bg-white group-hover:text-crimson group-hover:shadow-lg group-hover:shadow-black/10"
                   >
                     {site.assessmentCta}
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 shrink-0" />
                   </button>
                 </motion.div>
               ))}
             </div>
 
-            <div className="space-y-2.5 md:hidden">
+            <div className="mt-2.5 space-y-2.5 md:hidden">
               {plans.map((plan, i) => (
                 <motion.div
                   key={`${board}-${plan.grade}-mobile`}
@@ -231,6 +243,18 @@ export function TuitionPlansSection() {
                       {activeBoard.oneToOne ? batchLabel : `${batchLabel} / batch`}
                     </span>
                   </div>
+                  {showTimings ? (
+                    <div className="mt-4 rounded-2xl bg-white/10 px-4 py-3 group-hover:bg-white/15">
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">
+                        Timings
+                      </p>
+                      <ClassTimings
+                        compact
+                        centered
+                        timeClassName="text-white/80"
+                      />
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => openTrial({ plan: plan.grade })}

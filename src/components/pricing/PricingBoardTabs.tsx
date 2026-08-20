@@ -19,7 +19,7 @@ export function PricingBoardTabs({
       aria-label="Syllabus"
       className={cn(
         attached
-          ? 'flex w-full flex-wrap items-center justify-center gap-2 border-b border-white/10 p-2 sm:gap-3 sm:p-3'
+          ? 'flex w-full flex-wrap items-center justify-center gap-2 border-b border-white/10 pb-2 sm:gap-3 sm:pb-3'
           : 'inline-flex w-full max-w-4xl flex-wrap items-center justify-center gap-2 rounded-[28px] border border-white/15 bg-white/10 p-2 backdrop-blur-md sm:gap-3 sm:p-3',
         className,
       )}

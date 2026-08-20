@@ -15,6 +15,7 @@ import {
 } from '@/lib/tuition-plans'
 import { cn } from '@/lib/utils'
 import { PricingBoardTabs } from '@/components/pricing/PricingBoardTabs'
+import { ClassTimingsBlock } from '@/components/pricing/ClassTimings'
 
 function GradeLabel({ grade, className }: { grade: string; className?: string }) {
   const parts = parseGradeLabel(grade)
@@ -237,7 +238,7 @@ export function PricingCarousel3D() {
 
                           <div className="mt-6 flex flex-wrap justify-center gap-2">
                             <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
-                              {formatSessionsLabel(plan)} / month
+                              {formatSessionsLabel(plan)}
                             </span>
                             <span className="inline-flex rounded-full border border-charcoal/10 bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-charcoal/75">
                               {activeBoard.oneToOne ? batchLabel : `${batchSizeLabel} students`}
@@ -253,9 +254,9 @@ export function PricingCarousel3D() {
                             <p className="mt-2 text-sm font-medium text-charcoal/50">per month</p>
                           </div>
                         ) : (
-                          <p className="mt-8 border-t border-charcoal/[0.08] pt-6 text-center text-base font-bold leading-relaxed text-charcoal/75 md:text-lg">
-                            Contact us for a tailored quote after your free assessment.
-                          </p>
+                          <div className="mt-8 border-t border-charcoal/[0.08] pt-6">
+                            <ClassTimingsBlock />
+                          </div>
                         )}
 
                         <button
@@ -292,7 +293,7 @@ export function PricingCarousel3D() {
                             {formatInr(plan.rate)}
                           </p>
                         ) : (
-                          <p className="mt-3 text-sm font-medium text-charcoal/50">Quote on request</p>
+                          <p className="mt-3 text-sm font-medium text-charcoal/50">4 daily time slots</p>
                         )}
                       </button>
                     )}
@@ -336,9 +337,9 @@ export function PricingCarousel3D() {
                 · {formatInr(activePlan.rate)}/month · {batchSizeLabel} per batch
               </>
             ) : activeBoard.oneToOne ? (
-              <> · one-to-one · quote on request</>
+              <> · one-to-one · flexible timings</>
             ) : (
-              <> · quote on request</>
+              <> · 4:00 pm – 8:45 pm slots</>
             )}
           </p>
         </div>

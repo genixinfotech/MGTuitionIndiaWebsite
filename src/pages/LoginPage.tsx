@@ -41,7 +41,7 @@ export function LoginPage() {
               <h2 className="text-2xl font-extrabold tracking-tight text-charcoal md:text-3xl">
                 Welcome back
               </h2>
-              <p className="mt-2 text-sm text-charcoal/55">Sign in as a parent, student, consultant, or staff.</p>
+              <p className="mt-2 text-sm text-charcoal/55">Sign in as a parent or student.</p>
 
               <form onSubmit={onSubmit} className="mt-7 space-y-4">
                 <label className="block">
