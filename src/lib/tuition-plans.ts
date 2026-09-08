@@ -21,6 +21,13 @@ export const classTimings: readonly ClassTimingSlot[] = [
   { start: '7:45 pm', end: '8:45 pm' },
 ]
 
+export function classTimingIndex(startTime: string, endTime: string) {
+  const exact = classTimings.findIndex((slot) => slot.start === startTime && slot.end === endTime)
+  if (exact >= 0) return exact
+  const byStart = classTimings.findIndex((slot) => slot.start === startTime)
+  return byStart >= 0 ? byStart : 0
+}
+
 export type PricingBoardId = (typeof pricingBoards)[number]['id']
 export type TuitionPlanGrade = (typeof tuitionPlans)[number]['grade']
 
@@ -42,6 +49,10 @@ export const formatInr = formatPrice
 
 export function monthlyRateForGrade(grade: string | null | undefined) {
   return tuition.monthlyRateForGrade(grade)
+}
+
+export function sessionsPerMonthForGrade(grade: string | null | undefined) {
+  return tuition.sessionsPerMonthForGrade(grade)
 }
 
 export function formatSessionsLabel(plan: { sessionsMin: number; sessionsMax: number }) {

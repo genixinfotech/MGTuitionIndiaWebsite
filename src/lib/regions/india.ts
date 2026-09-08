@@ -87,6 +87,22 @@ function monthlyRateForGrade(grade: string | null | undefined) {
   return 3500
 }
 
+function sessionsPerMonthForGrade(grade: string | null | undefined) {
+  const number = grade?.match(/\d+/)?.[0]
+  if (!number) return 8
+  const plan = tuitionPlans.find(
+    (item) =>
+      item.grade.startsWith(`${number}th`) ||
+      item.grade.startsWith(`${number}st`) ||
+      item.grade.startsWith(`${number}nd`) ||
+      item.grade.startsWith(`${number}rd`),
+  )
+  if (plan) return plan.sessionsMin
+  const n = Number(number)
+  if (n <= 9) return 8
+  return 12
+}
+
 function plansForBoard(boardId: 'cbse' | 'icse' | 'igcse') {
   if (boardId === 'igcse') {
     return tuitionPlans.filter((plan) => Number(plan.grade.match(/^(\d+)/)?.[1]) >= 6)
@@ -229,6 +245,8 @@ export const indiaRegion: RegionBundle = {
       'International curricula grow — India hubs in Cherthala and Kottayam strengthen operations.',
     schedulingFlexNote:
       'Sessions that fit school, exams, and family life across Indian time zones.',
+    paymentUpiQr: '/images/payment-upi-qr.svg',
+    paymentUpiId: 'mgtuition@upi',
   },
   tuition: {
     batchSizeLabel: '6–8',
@@ -243,6 +261,7 @@ export const indiaRegion: RegionBundle = {
     formatPrice: formatInr,
     plansForBoard,
     monthlyRateForGrade,
+    sessionsPerMonthForGrade,
     minEnrolmentGrade: 4,
     maxEnrolmentGrade: 12,
   },

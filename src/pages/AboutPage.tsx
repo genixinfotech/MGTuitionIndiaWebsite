@@ -80,7 +80,7 @@ export function AboutPage() {
       />
 
       {/* What we stand for */}
-      <section className="relative bg-[#f8fafc] px-4 py-16 md:px-6 md:py-20">
+      <section className="relative bg-gray-50 px-4 py-16 md:px-6 md:py-20">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(204,0,0,0.05),transparent_60%)]" />
 
         <motion.div
@@ -203,7 +203,7 @@ export function AboutPage() {
       </section>
 
       {/* Timeline */}
-      <section className="relative overflow-hidden bg-[#f8fafc] px-4 py-20 md:px-6 md:py-28">
+      <section className="relative overflow-hidden bg-gray-50 px-4 py-20 md:px-6 md:py-28">
         <div className="pointer-events-none absolute -left-20 top-1/4 h-72 w-72 rounded-full bg-crimson/10 blur-[100px]" />
 
         <motion.div
@@ -252,7 +252,7 @@ export function AboutPage() {
                 <div className="hidden md:block" aria-hidden />
 
                 <div
-                  className="absolute left-0 top-1 flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#f8fafc] bg-gradient-to-br from-crimson to-[#e63946] shadow-md md:left-1/2 md:-translate-x-1/2"
+                  className="absolute left-0 top-1 flex h-10 w-10 items-center justify-center rounded-full border-4 border-gray-50 bg-gradient-to-br from-crimson to-[#e63946] shadow-md md:left-1/2 md:-translate-x-1/2"
                   aria-hidden
                 >
                   <span className="h-2 w-2 rounded-full bg-white" />

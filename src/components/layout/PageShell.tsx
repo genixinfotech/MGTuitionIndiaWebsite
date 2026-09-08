@@ -6,7 +6,7 @@ import { TrialModal } from '@/components/floating/TrialModal'
 
 export function PageShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       <Header />
       <main className="flex-1 overflow-x-hidden">{children}</main>
       <Footer />

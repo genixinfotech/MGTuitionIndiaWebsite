@@ -66,6 +66,8 @@ export type SiteConfig = {
   aboutJourneySubtitle: string
   aboutTimelineReach: string
   schedulingFlexNote: string
+  paymentUpiQr: string
+  paymentUpiId?: string
 }
 
 export type TuitionPlan = {
@@ -91,6 +93,7 @@ export type TuitionConfig = {
   formatPrice: (amount: number) => string
   plansForBoard: (boardId: PricingBoard['id']) => TuitionPlan[]
   monthlyRateForGrade: (grade: string | null | undefined) => number
+  sessionsPerMonthForGrade: (grade: string | null | undefined) => number
   minEnrolmentGrade: number
   maxEnrolmentGrade: number
 }

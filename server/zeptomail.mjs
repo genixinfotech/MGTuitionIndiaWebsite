@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getSiteBrand } from './regions.mjs'
+import { createTrialAssessmentRequests } from './trial-assessments.mjs'
 
 const KINDS = new Set(['trial', 'contact', 'tutor'])
 const MAX_BODY_BYTES = 50_000
@@ -124,14 +125,51 @@ function wrapHtml({ eyebrow, title, intro, rowsHtml, note }) {
 </html>`
 }
 
+function normalizeSubjects(value) {
+  if (Array.isArray(value)) {
+    return [...new Set(value.map((subject) => String(subject || '').trim()).filter(Boolean))]
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return [...new Set(value.split(',').map((subject) => subject.trim()).filter(Boolean))]
+  }
+  return []
+}
+
+function formatTrialStudents(data) {
+  if (Array.isArray(data.students) && data.students.length > 0) {
+    return data.students
+      .map((student, index) => {
+        const subjects = normalizeSubjects(student.subjects).join(', ')
+        return [
+          `Student ${index + 1}: ${student.studentName || student.name || '—'}`,
+          `Syllabus: ${student.board || '—'}`,
+          `Grade: ${student.grade || student.plan || '—'}`,
+          `Subjects: ${subjects || '—'}`,
+        ].join('\n')
+      })
+      .join('\n\n')
+  }
+
+  const subjects = normalizeSubjects(data.subjects).join(', ')
+  if (data.board || data.grade || data.plan || subjects) {
+    return [
+      `Student 1: ${data.studentName || data.name || '—'}`,
+      `Syllabus: ${data.board || '—'}`,
+      `Grade: ${data.grade || data.plan || '—'}`,
+      `Subjects: ${subjects || '—'}`,
+    ].join('\n')
+  }
+
+  return ''
+}
+
 function staffPairs(kind, data) {
   if (kind === 'trial') {
     return [
-      ['Name', data.name],
+      ['Parent name', data.parentName || data.name],
       ['Email', data.email],
       ['Phone', data.phone],
-      ['Board', data.board],
-      ['Plan', data.plan],
+      ['Students', formatTrialStudents(data)],
       ['Referral', data.referral],
       ['Message', data.message],
     ]
@@ -435,6 +473,13 @@ export function createEmailMiddleware(env) {
     try {
       const body = await readJson(req)
       await sendZeptoMail(env, body)
+      if (body.kind === 'trial') {
+        try {
+          await createTrialAssessmentRequests(env, body.data ?? {})
+        } catch (error) {
+          console.error('[trial-assessments]', error)
+        }
+      }
       res.statusCode = 200
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({ ok: true }))

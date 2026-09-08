@@ -8,7 +8,8 @@ import {
   type ReactNode,
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import type { AppRole, Profile } from '@/lib/database.types'
+import type { Profile } from '@/lib/database.types'
+import { normalizeRole, type AppRole } from '@/lib/roles'
 import { homePathForRole } from '@/lib/auth-paths'
 import { authRedirectTo, getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 
@@ -57,7 +58,7 @@ function toAuthUser(sessionUser: User, profile: Profile | null): AuthUser {
     id: sessionUser.id,
     email,
     name,
-    role: profile?.role ?? 'parent',
+    role: normalizeRole(profile?.role),
     avatarUrl: avatarUrlFrom(sessionUser),
   }
 }

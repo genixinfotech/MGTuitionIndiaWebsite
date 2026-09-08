@@ -6,6 +6,7 @@ import { site } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { homePathForRole, isDashboardRoute } from '@/lib/auth-paths'
+import { canAccessOneView } from '@/lib/oneview-nav'
 import { AccountMenu } from '@/components/layout/AccountMenu'
 
 function NavLoginButton({
@@ -79,7 +80,11 @@ function NavDashboardButton({ className, compact }: { className?: string; compac
         className,
       )}
     >
-      {user.role === 'student' ? 'My classes' : 'Dashboard'}
+      {user.role === 'student'
+        ? 'My classes'
+        : canAccessOneView(user.role)
+          ? 'OneView'
+          : 'Portal'}
     </Link>
   )
 }

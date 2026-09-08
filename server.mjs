@@ -4,6 +4,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createEmailMiddleware } from './server/zeptomail.mjs'
 import { createStudentsMiddleware } from './server/students.mjs'
+import { createParentsMiddleware } from './server/parents.mjs'
+import { createTutorsMiddleware } from './server/tutors.mjs'
+import { createUsersMiddleware } from './server/users.mjs'
 import {
   createPublicConfigMiddleware,
   injectPublicConfig,
@@ -50,6 +53,9 @@ function loadDotEnv() {
 loadDotEnv()
 const emailMiddleware = createEmailMiddleware(process.env)
 const studentsMiddleware = createStudentsMiddleware(process.env)
+const parentsMiddleware = createParentsMiddleware(process.env)
+const tutorsMiddleware = createTutorsMiddleware(process.env)
+const usersMiddleware = createUsersMiddleware(process.env)
 const publicConfigMiddleware = createPublicConfigMiddleware(process.env)
 
 const mime = {
@@ -86,8 +92,23 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
-  if (url.pathname === '/api/students') {
+  if (url.pathname === '/api/students' || url.pathname.startsWith('/api/students/')) {
     await studentsMiddleware(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/parents' || url.pathname.startsWith('/api/parents/')) {
+    await parentsMiddleware(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/tutors' || url.pathname.startsWith('/api/tutors/')) {
+    await tutorsMiddleware(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/users' || url.pathname.startsWith('/api/users/')) {
+    await usersMiddleware(req, res)
     return
   }
 

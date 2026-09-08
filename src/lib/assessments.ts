@@ -1,5 +1,7 @@
 import { getSupabase } from '@/lib/supabase'
 import { buildAssessmentPdf } from '@/lib/assessment-pdf'
+import { syncStudentSessions } from '@/lib/sessions'
+import { monthlyRateForGrade } from '@/lib/tuition-plans'
 import type {
   Admission,
   AssessmentRequest,
@@ -60,19 +62,29 @@ export function isPreferredSlotInPast(date: string, time: string) {
   return Number.isNaN(parsed.getTime()) || parsed.getTime() <= Date.now()
 }
 
+export function assessmentsForStudent(requests: AssessmentRequest[], studentId: number) {
+  return requests.filter((row) => row.student_id === studentId)
+}
+
 export function latestAssessmentForStudent(requests: AssessmentRequest[], studentId: number) {
-  return requests.find((row) => row.student_id === studentId) ?? null
+  return assessmentsForStudent(requests, studentId)[0] ?? null
+}
+
+export function openAssessmentSubjects(requests: AssessmentRequest[], studentId: number) {
+  return assessmentsForStudent(requests, studentId)
+    .filter((row) => openAssessmentStatuses.includes(row.status))
+    .map((row) => row.subject)
 }
 
 export function hasOpenAssessment(requests: AssessmentRequest[], studentId: number) {
-  return requests.some(
-    (row) => row.student_id === studentId && openAssessmentStatuses.includes(row.status),
+  return assessmentsForStudent(requests, studentId).some((row) =>
+    openAssessmentStatuses.includes(row.status),
   )
 }
 
-export function hasCompletedAssessment(requests: AssessmentRequest[], studentId: number) {
-  const latest = latestAssessmentForStudent(requests, studentId)
-  return latest?.status === 'completed'
+export function allAssessmentsCompleted(requests: AssessmentRequest[], studentId: number) {
+  const rows = assessmentsForStudent(requests, studentId)
+  return rows.length > 0 && rows.every((row) => row.status === 'completed')
 }
 
 export function subjectsForStudent(rows: StudentSubject[], studentId: number) {
@@ -83,32 +95,184 @@ export function admissionForStudent(rows: Admission[], studentId: number) {
   return rows.find((row) => row.student_id === studentId) ?? null
 }
 
+export function paidAdmissionSubjects(admission: Admission | null) {
+  return admission?.subjects ?? []
+}
+
+export function isAdmissionPaidForSubject(admission: Admission | null, subject: string) {
+  return paidAdmissionSubjects(admission).includes(subject)
+}
+
+export function paidMonthsForSubject(admission: Admission | null, subject: string) {
+  if (!isAdmissionPaidForSubject(admission, subject)) return 0
+  const months = admission?.subject_months?.[subject]
+  if (typeof months === 'number' && months > 0) return months
+  return 1
+}
+
+export function incrementSubjectMonths(
+  existing: Record<string, number> | null | undefined,
+  subjects: string[],
+) {
+  const next = { ...(existing ?? {}) }
+  for (const subject of subjects) {
+    const trimmed = subject.trim()
+    if (!trimmed) continue
+    next[trimmed] = (next[trimmed] ?? 0) + 1
+  }
+  return next
+}
+
+export function unpaidSubjectsForAdmission(subjects: StudentSubject[], admission: Admission | null) {
+  return subjects.filter((row) => !isAdmissionPaidForSubject(admission, row.subject))
+}
+
+export type PayableTuitionSubject = {
+  key: string
+  subject: string
+  monthly_rate: number
+  student_subject_id: number | null
+  hasReport: boolean
+  secured: boolean
+  pendingAssessment: boolean
+}
+
+export function buildPayableTuitionSubjects(input: {
+  student: Pick<Student, 'id' | 'grade'>
+  assignedSubjects: StudentSubject[]
+  admission: Admission | null
+  completedReports: Pick<AssessmentRequest, 'subject'>[]
+  openRequests?: Pick<AssessmentRequest, 'subject'>[]
+}) {
+  const defaultRate = monthlyRateForGrade(input.student.grade)
+  const bySubject = new Map<string, PayableTuitionSubject>()
+  const openRequests = input.openRequests ?? []
+
+  function reportReady(subject: string) {
+    return input.completedReports.some((request) => request.subject === subject)
+  }
+
+  function assessmentPending(subject: string) {
+    return openRequests.some((request) => request.subject === subject) && !reportReady(subject)
+  }
+
+  for (const row of input.assignedSubjects) {
+    bySubject.set(row.subject, {
+      key: `assigned-${row.id}`,
+      subject: row.subject,
+      monthly_rate: row.monthly_rate,
+      student_subject_id: row.id,
+      hasReport: reportReady(row.subject),
+      secured: isAdmissionPaidForSubject(input.admission, row.subject),
+      pendingAssessment: assessmentPending(row.subject),
+    })
+  }
+
+  for (const request of input.completedReports) {
+    if (bySubject.has(request.subject)) continue
+    bySubject.set(request.subject, {
+      key: `report-${request.subject}`,
+      subject: request.subject,
+      monthly_rate: defaultRate,
+      student_subject_id: null,
+      hasReport: true,
+      secured: isAdmissionPaidForSubject(input.admission, request.subject),
+      pendingAssessment: false,
+    })
+  }
+
+  for (const request of openRequests) {
+    if (bySubject.has(request.subject)) continue
+    bySubject.set(request.subject, {
+      key: `open-${request.subject}`,
+      subject: request.subject,
+      monthly_rate: defaultRate,
+      student_subject_id: null,
+      hasReport: false,
+      secured: isAdmissionPaidForSubject(input.admission, request.subject),
+      pendingAssessment: true,
+    })
+  }
+
+  return [...bySubject.values()].sort((a, b) => a.subject.localeCompare(b.subject))
+}
+
+export function unpaidPayableTuitionSubjects(rows: PayableTuitionSubject[]) {
+  return rows.filter((row) => !row.secured)
+}
+
+export function payableSubjectToCheckoutRow(studentId: number, row: PayableTuitionSubject): StudentSubject {
+  return {
+    id: row.student_subject_id ?? 0,
+    student_id: studentId,
+    subject: row.subject,
+    monthly_rate: row.monthly_rate,
+    created_at: '',
+  }
+}
+
+export function paidOnlyAdmissionSubjectsFromPayable(
+  payableSubjects: PayableTuitionSubject[],
+  admission: Admission | null,
+) {
+  const current = new Set(payableSubjects.map((row) => row.subject))
+  return paidAdmissionSubjects(admission).filter((subject) => !current.has(subject))
+}
+
+export function paidOnlyAdmissionSubjects(subjects: StudentSubject[], admission: Admission | null) {
+  const current = new Set(subjects.map((row) => row.subject))
+  return paidAdmissionSubjects(admission).filter((subject) => !current.has(subject))
+}
+
+export async function requestStudentAssessments(input: {
+  studentId: number
+  parentId: string
+  preferredDate: string
+  preferredTime: string
+  subjects: string[]
+}) {
+  const subjects = [...new Set(input.subjects.map((subject) => subject.trim()).filter(Boolean))]
+  if (subjects.length === 0) {
+    throw new Error('Select at least one subject for the assessment.')
+  }
+
+  const { data, error } = await getSupabase()
+    .from('assessment_requests')
+    .insert(
+      subjects.map((subject) => ({
+        student_id: input.studentId,
+        parent_id: input.parentId,
+        requested_by: input.parentId,
+        preferred_date: input.preferredDate,
+        preferred_time: input.preferredTime,
+        subject,
+      })),
+    )
+    .select('*')
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('An assessment has already been requested for one or more of these subjects.')
+    }
+    throw new Error(error.message || 'Unable to request an assessment.')
+  }
+
+  return (data ?? []) as AssessmentRequest[]
+}
+
+/** @deprecated Use requestStudentAssessments */
 export async function requestStudentAssessment(input: {
   studentId: number
   parentId: string
   preferredDate: string
   preferredTime: string
+  subjects?: string[]
 }) {
-  const { data, error } = await getSupabase()
-    .from('assessment_requests')
-    .insert({
-      student_id: input.studentId,
-      parent_id: input.parentId,
-      requested_by: input.parentId,
-      preferred_date: input.preferredDate,
-      preferred_time: input.preferredTime,
-    })
-    .select('*')
-    .single()
-
-  if (error) {
-    if (error.code === '23505') {
-      throw new Error('An assessment has already been requested for this student.')
-    }
-    throw new Error(error.message || 'Unable to request an assessment.')
-  }
-
-  return data as AssessmentRequest
+  const rows = await requestStudentAssessments({
+    ...input,
+    subjects: input.subjects?.length ? input.subjects : ['General'],
+  })
+  return rows[0]
 }
 
 export async function listAssessmentRequests() {
@@ -122,6 +286,9 @@ export async function listAssessmentRequests() {
       ),
       parent:profiles!parent_id (
         id, full_name, email, phone
+      ),
+      assigned_expert:profiles!assigned_expert_id (
+        id, full_name, email
       )
     `,
     )
@@ -129,6 +296,14 @@ export async function listAssessmentRequests() {
 
   if (error) throw new Error(error.message || 'Unable to load assessment requests.')
   return (data ?? []) as AssessmentRequestDetails[]
+}
+
+export async function assignAssessmentExpert(requestId: number, expertId: string | null) {
+  const { error } = await getSupabase()
+    .from('assessment_requests')
+    .update({ assigned_expert_id: expertId })
+    .eq('id', requestId)
+  if (error) throw new Error(error.message || 'Unable to assign this subject expert.')
 }
 
 export async function updateAssessmentStatus(id: number, status: AssessmentStatus) {
@@ -195,15 +370,19 @@ export async function listStudentSubjects(studentIds: number[]) {
 
 export async function saveStudentSubjects(student: Student, subjects: string[], monthlyRate: number) {
   const supabase = getSupabase()
-  const { error: deleteError } = await supabase.from('student_subjects').delete().eq('student_id', student.id)
-  if (deleteError) throw new Error(deleteError.message || 'Unable to update subjects.')
-  if (subjects.length === 0) return []
-  const { data, error } = await supabase
+  const unique = [...new Set(subjects.map((subject) => subject.trim()).filter(Boolean))]
+  const existing = await listStudentSubjects([student.id])
+  if (unique.length === 0) return existing
+
+  const existingNames = new Set(existing.map((row) => row.subject))
+  const toAdd = unique.filter((subject) => !existingNames.has(subject))
+  if (toAdd.length === 0) return existing
+
+  const { error } = await supabase
     .from('student_subjects')
-    .insert(subjects.map((subject) => ({ student_id: student.id, subject, monthly_rate: monthlyRate })))
-    .select('*')
+    .insert(toAdd.map((subject) => ({ student_id: student.id, subject, monthly_rate: monthlyRate })))
   if (error) throw new Error(error.message || 'Unable to save subjects.')
-  return (data ?? []) as StudentSubject[]
+  return listStudentSubjects([student.id])
 }
 
 export async function listAdmissions(studentIds: number[]) {
@@ -219,17 +398,23 @@ export async function payAndSecureAdmission(input: {
   amount: number
   subjects: string[]
 }) {
-  const paid = {
-    amount: input.amount,
-    status: 'paid' as const,
-    subjects: input.subjects,
-    paid_at: new Date().toISOString(),
-  }
-  const { data: existing } = await getSupabase()
+  const { data: existingRow } = await getSupabase()
     .from('admissions')
-    .select('id')
+    .select('*')
     .eq('student_id', input.studentId)
     .maybeSingle()
+
+  const existing = (existingRow ?? null) as Admission | null
+  const mergedSubjects = [...new Set([...(existing?.subjects ?? []), ...input.subjects])]
+  const mergedAmount = (existing?.amount ?? 0) + input.amount
+  const subjectMonths = incrementSubjectMonths(existing?.subject_months, input.subjects)
+  const paid = {
+    amount: mergedAmount,
+    status: 'paid' as const,
+    subjects: mergedSubjects,
+    subject_months: subjectMonths,
+    paid_at: new Date().toISOString(),
+  }
 
   if (existing?.id) {
     const { data, error } = await getSupabase()
@@ -239,6 +424,7 @@ export async function payAndSecureAdmission(input: {
       .select('*')
       .single()
     if (error) throw new Error(error.message || 'Unable to complete admission.')
+    await syncStudentSessions(input.studentId)
     return data as Admission
   }
 
@@ -252,5 +438,29 @@ export async function payAndSecureAdmission(input: {
     .select('*')
     .single()
   if (error) throw new Error(error.message || 'Unable to complete admission.')
+  await syncStudentSessions(input.studentId)
   return data as Admission
+}
+
+export async function secureAdmissionForSubject(input: {
+  studentId: number
+  parentId: string
+  subject: string
+  monthlyRate: number
+}) {
+  return payAndSecureAdmission({
+    studentId: input.studentId,
+    parentId: input.parentId,
+    amount: input.monthlyRate,
+    subjects: [input.subject],
+  })
+}
+
+export function monthlyRateForTuitionSubject(
+  student: Pick<Student, 'grade'> | null | undefined,
+  assignedSubjects: StudentSubject[],
+  subject: string,
+) {
+  const assigned = assignedSubjects.find((row) => row.subject === subject)
+  return assigned?.monthly_rate ?? monthlyRateForGrade(student?.grade)
 }

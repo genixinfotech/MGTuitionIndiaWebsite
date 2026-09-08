@@ -1,12 +1,19 @@
 import { site } from './site'
 import { recordEnquiry } from './crm'
 
+export type TrialStudentPayload = {
+  studentName: string
+  board: string
+  grade: string
+  subjects: string[]
+}
+
 export type TrialPayload = {
   name: string
+  parentName: string
   email: string
   phone: string
-  board: string
-  plan?: string
+  students: TrialStudentPayload[]
   message?: string
   referral?: string
 }
@@ -45,17 +52,28 @@ async function postForm(kind: 'trial' | 'contact' | 'tutor', data: object): Prom
   }
 
   if (response.ok && payload?.ok) {
-    const fields = data as Record<string, string>
+    const fields = data as Record<string, unknown>
+    const enquiryPayload = Object.fromEntries(
+      Object.entries(fields)
+        .filter(([, value]) => {
+          if (Array.isArray(value)) return value.length > 0
+          return typeof value === 'string' && value
+        })
+        .map(([key, value]) => [
+          key,
+          key === 'students' && Array.isArray(value)
+            ? JSON.stringify(value)
+            : Array.isArray(value)
+              ? value.join(', ')
+              : String(value),
+        ]),
+    )
     void recordEnquiry({
       kind,
-      name: fields.name ?? '',
-      email: fields.email ?? '',
-      phone: fields.phone,
-      payload: Object.fromEntries(
-        Object.entries(fields)
-          .filter(([, value]) => typeof value === 'string' && value)
-          .map(([key, value]) => [key, String(value)]),
-      ),
+      name: String(fields.parentName ?? fields.name ?? ''),
+      email: String(fields.email ?? ''),
+      phone: typeof fields.phone === 'string' ? fields.phone : undefined,
+      payload: enquiryPayload,
     })
     return { ok: true }
   }

@@ -96,6 +96,22 @@ function monthlyRateForGrade(grade: string | null | undefined) {
   return 60
 }
 
+function sessionsPerMonthForGrade(grade: string | null | undefined) {
+  const number = grade?.match(/\d+/)?.[0]
+  if (!number) return 8
+  const plan = tuitionPlans.find(
+    (item) =>
+      item.grade.startsWith(`${number}th`) ||
+      item.grade.startsWith(`${number}st`) ||
+      item.grade.startsWith(`${number}nd`) ||
+      item.grade.startsWith(`${number}rd`),
+  )
+  if (plan) return plan.sessionsMin
+  const n = Number(number)
+  if (n <= 9) return 8
+  return 12
+}
+
 function plansForBoard(boardId: 'cbse' | 'icse' | 'igcse') {
   if (boardId === 'igcse') {
     return tuitionPlans.filter((plan) => Number(plan.grade.match(/^(\d+)/)?.[1]) >= 6)
@@ -123,7 +139,7 @@ export const gccRegion: RegionBundle = {
     name: 'MG Tuition GCC',
     brand: 'MG Tuition',
     regionLabel: 'GCC',
-    legal: 'IdealMG Educare FZC',
+    legal: 'IdealMG FZ LLC',
     tagline: 'Small-Batch Live Tuition for CBSE, ICSE & IGCSE',
     syllabusCoverage: 'CBSE, ICSE & IGCSE',
     email: 'info@mgtuition.ae',
@@ -145,7 +161,7 @@ export const gccRegion: RegionBundle = {
       {
         id: 'uae',
         label: 'Registered Office',
-        lines: ['IdealMG Educare FZC', 'Address to be updated'],
+        lines: ['IdealMG FZ LLC', 'VUPRO517, Compass Building - Al Hulaila, Al Hulaila Industrial Zone-FZ, Ras Al Khaimah, UAE'],
       },
     ],
     boards: [...gccBoards],
@@ -183,7 +199,7 @@ export const gccRegion: RegionBundle = {
     formDisclaimer:
       'By submitting this form you agree to be contacted by MG Tuition about this enquiry. We use your details only to respond and do not sell personal data.',
     enrolmentDisclaimer:
-      'IdealMG Educare FZC provides live online tuition for CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only. An assessment or contact request does not create a tuition contract until enrolment is confirmed in writing.',
+      'IdealMG FZ LLC provides live online tuition for CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only. An assessment or contact request does not create a tuition contract until enrolment is confirmed in writing.',
     privacyLaw: 'applicable UAE law',
     notesPlaceholder: 'Class 4 or above, subjects, goals',
     testimonialSubtitle:
@@ -193,9 +209,9 @@ export const gccRegion: RegionBundle = {
     aboutTeaserBody:
       'From our UAE base, we deliver live classes in very small batches for CBSE and ICSE, and one-to-one tuition for IGCSE.',
     aboutHeroDescription:
-      'Since 2015, IdealMG Educare has delivered live online tuition — personal, honest, and built around CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only. IdealMG Educare FZC serves families across the GCC.',
+      'Since 2015, IdealMG has delivered live online tuition — personal, honest, and built around CBSE, ICSE and IGCSE. IGCSE is offered one-to-one only. IdealMG Educare FZC serves families across the GCC.',
     aboutLocationEyebrow: 'Serving the GCC',
-    aboutLocationTitle: 'IdealMG Educare FZC',
+    aboutLocationTitle: 'IdealMG FZ LLC',
     aboutLocationBody:
       'IdealMG Educare FZC delivers live small-batch classes to students across the GCC. Full office address details will be published here soon.',
     aboutLocationImage: '/images/hero-bg.png',
@@ -208,6 +224,8 @@ export const gccRegion: RegionBundle = {
       'International curricula grow — our UAE base strengthens operations across the GCC.',
     schedulingFlexNote:
       'Sessions that fit school, exams, and family life across GCC time zones.',
+    paymentUpiQr: '/images/payment-upi-qr.svg',
+    paymentUpiId: 'mgtuition@upi',
   },
   tuition: {
     batchSizeLabel: '6–8',
@@ -222,6 +240,7 @@ export const gccRegion: RegionBundle = {
     formatPrice,
     plansForBoard,
     monthlyRateForGrade,
+    sessionsPerMonthForGrade,
     minEnrolmentGrade: 4,
     maxEnrolmentGrade: 12,
   },

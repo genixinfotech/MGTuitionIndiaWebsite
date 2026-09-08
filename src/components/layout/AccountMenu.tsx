@@ -116,7 +116,7 @@ export function AccountMenu() {
         >
           <Link
             role="menuitem"
-            to="/profile"
+            to="/portal/profile"
             className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold text-charcoal/75 transition-colors hover:bg-crimson/[0.06] hover:text-crimson"
           >
             <UserRound className="h-4 w-4" />

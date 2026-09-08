@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ExternalLink, FileText, Loader2, X } from 'lucide-react'
 import { formatPreferredSlot, getAssessmentReportUrl } from '@/lib/assessments'
@@ -6,6 +7,7 @@ import { formatPreferredSlot, getAssessmentReportUrl } from '@/lib/assessments'
 export function AssessmentReportModal({
   open,
   studentName,
+  subject,
   preferredDate,
   preferredTime,
   report,
@@ -14,6 +16,7 @@ export function AssessmentReportModal({
 }: {
   open: boolean
   studentName: string
+  subject?: string
   preferredDate?: string | null
   preferredTime?: string | null
   report: string | null
@@ -50,7 +53,7 @@ export function AssessmentReportModal({
     }
   }, [open, reportPath])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -90,6 +93,7 @@ export function AssessmentReportModal({
               <h2 id="assessment-report-title" className="mt-2 text-2xl font-extrabold tracking-tight">
                 {studentName}
               </h2>
+              {subject ? <p className="mt-1 text-sm font-semibold text-white/90">{subject}</p> : null}
               {slot !== '—' ? <p className="mt-1 text-sm text-white/80">{slot}</p> : null}
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
@@ -101,12 +105,12 @@ export function AssessmentReportModal({
                 <iframe
                   title={`${studentName} assessment report`}
                   src={url}
-                  className="h-[min(62vh,560px)] w-full rounded-2xl border border-charcoal/10 bg-[#f8fafc]"
+                  className="h-[min(62vh,560px)] w-full rounded-2xl border border-charcoal/10 bg-gray-50"
                 />
               ) : report?.trim() ? (
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal/75">{report}</p>
               ) : (
-                <div className="rounded-2xl border border-dashed border-charcoal/15 bg-[#f8fafc] px-4 py-8 text-center">
+                <div className="rounded-2xl border border-dashed border-charcoal/15 bg-gray-50 px-4 py-8 text-center">
                   <FileText className="mx-auto h-8 w-8 text-charcoal/30" />
                   <p className="mt-3 text-sm text-charcoal/55">
                     {error ||
@@ -129,6 +133,7 @@ export function AssessmentReportModal({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

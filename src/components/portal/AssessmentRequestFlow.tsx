@@ -1,44 +1,60 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CalendarDays, Clock, Loader2, Sparkles, X } from 'lucide-react'
 import { FormField, fieldClass } from '@/components/forms/FormField'
 import { FormSuccess } from '@/components/forms/FormSuccess'
+import { SubjectMultiSelect } from '@/components/forms/SubjectMultiSelect'
+import { useSubjectsForGrade } from '@/hooks/useCurriculum'
 import {
   assessmentTimeSlots,
   formatPreferredSlot,
   isPreferredSlotInPast,
   localDateInputValue,
-  requestStudentAssessment,
+  requestStudentAssessments,
 } from '@/lib/assessments'
 import type { AssessmentRequest, Student } from '@/lib/database.types'
 
 export function AssessmentRequestFlow({
   student,
   parentId,
+  blockedSubjects = [],
   onClose,
   onCreated,
 }: {
   student: Student | null
   parentId: string
+  blockedSubjects?: string[]
   onClose: () => void
-  onCreated: (row: AssessmentRequest) => void
+  onCreated: (rows: AssessmentRequest[]) => void
 }) {
   const [preferredDate, setPreferredDate] = useState(localDateInputValue())
   const [preferredTime, setPreferredTime] = useState('17:00')
+  const [subjects, setSubjects] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmation, setConfirmation] = useState<{
     name: string
     date: string
     time: string
+    subjects: string[]
   } | null>(null)
+  const { subjects: availableSubjects, loading: subjectsLoading } = useSubjectsForGrade(
+    student?.grade,
+    student?.board,
+  )
 
   useEffect(() => {
     if (!student) return
     setPreferredDate(localDateInputValue())
     setPreferredTime('17:00')
+    setSubjects([])
     setError('')
   }, [student])
+
+  useEffect(() => {
+    setSubjects((current) => current.filter((subject) => availableSubjects.includes(subject)))
+  }, [availableSubjects])
 
   useEffect(() => {
     if (!student && !confirmation) return
@@ -60,23 +76,29 @@ export function AssessmentRequestFlow({
     e.preventDefault()
     if (!student) return
     setError('')
+    if (subjects.length === 0) {
+      setError('Select at least one subject for the assessment.')
+      return
+    }
     if (isPreferredSlotInPast(preferredDate, preferredTime)) {
       setError('Please choose a preferred date and time in the future.')
       return
     }
     setSaving(true)
     try {
-      const row = await requestStudentAssessment({
+      const rows = await requestStudentAssessments({
         studentId: student.id,
         parentId,
         preferredDate,
         preferredTime,
+        subjects,
       })
-      onCreated(row)
+      onCreated(rows)
       setConfirmation({
         name: student.full_name,
         date: preferredDate,
         time: preferredTime,
+        subjects,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to request an assessment.')
@@ -90,13 +112,13 @@ export function AssessmentRequestFlow({
     onClose()
   }
 
-  return (
+  return createPortal(
     <>
       <AnimatePresence>
         {student ? (
           <motion.div
             key="assessment-panel"
-            className="fixed inset-0 z-[60]"
+            className="fixed inset-0 z-[70]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -112,7 +134,7 @@ export function AssessmentRequestFlow({
               role="dialog"
               aria-modal="true"
               aria-labelledby="assessment-panel-title"
-              className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-white shadow-[-24px_0_60px_-28px_rgba(45,45,45,0.45)]"
+              className="fixed top-0 right-0 flex h-dvh w-full max-w-md flex-col bg-white shadow-[-24px_0_60px_-28px_rgba(45,45,45,0.45)]"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -125,8 +147,8 @@ export function AssessmentRequestFlow({
                     <h2 id="assessment-panel-title">Get Free Assessment</h2>
                   </div>
                   <p className="mt-1 text-sm text-charcoal/50">
-                    Choose a preferred slot for {student.full_name}. A student consultant will confirm
-                    the time with you.
+                    Choose subjects and a preferred slot for {student.full_name}. A student consultant
+                    will confirm the time with you.
                   </p>
                 </div>
                 <button
@@ -142,6 +164,18 @@ export function AssessmentRequestFlow({
 
               <form onSubmit={(event) => void onSubmit(event)} className="flex min-h-0 flex-1 flex-col">
                 <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
+                  <SubjectMultiSelect
+                    value={subjects}
+                    onChange={setSubjects}
+                    subjects={availableSubjects}
+                    disabledSubjects={blockedSubjects}
+                    loading={subjectsLoading}
+                    emptyMessage={
+                      student?.grade && student?.board
+                        ? 'No subjects are configured for this syllabus and grade yet.'
+                        : 'Add the student syllabus and grade to their profile to choose subjects.'
+                    }
+                  />
                   <FormField label="Preferred date" icon={CalendarDays}>
                     <input
                       required
@@ -173,7 +207,11 @@ export function AssessmentRequestFlow({
                   ) : null}
                 </div>
                 <div className="border-t border-charcoal/[0.06] px-5 py-4">
-                  <button type="submit" disabled={saving} className="btn-primary w-full">
+                  <button
+                    type="submit"
+                    disabled={saving || subjectsLoading || subjects.length === 0}
+                    className="btn-primary w-full"
+                  >
                     {saving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" /> Confirming…
@@ -217,7 +255,7 @@ export function AssessmentRequestFlow({
               <FormSuccess
                 titleId="assessment-confirm-title"
                 title="Assessment requested"
-                description={`We've noted ${formatPreferredSlot(confirmation.date, confirmation.time)} for ${confirmation.name}. A Student Consultant will be contacting you shortly to confirm.`}
+                description={`We've noted ${formatPreferredSlot(confirmation.date, confirmation.time)} for ${confirmation.name} in ${confirmation.subjects.join(', ')}. A Student Consultant will be contacting you shortly to confirm.`}
                 actionLabel="Done"
                 onAction={() => setConfirmation(null)}
               />
@@ -225,6 +263,7 @@ export function AssessmentRequestFlow({
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </>
+    </>,
+    document.body,
   )
 }

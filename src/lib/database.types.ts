@@ -1,4 +1,5 @@
-export type AppRole = 'parent' | 'tutor' | 'staff' | 'student' | 'student_consultant'
+import type { AppRole } from '@/lib/roles'
+export type { AppRole } from '@/lib/roles'
 export type EnquiryKind = 'trial' | 'contact' | 'tutor'
 export type EnquiryStatus = 'new' | 'contacted' | 'enrolled' | 'closed'
 export type AssessmentStatus = 'new' | 'contacted' | 'scheduled' | 'completed' | 'cancelled'
@@ -45,6 +46,8 @@ export type AssessmentRequest = {
   student_id: number
   parent_id: string
   requested_by: string
+  subject: string
+  assigned_expert_id: string | null
   status: AssessmentStatus
   preferred_date: string | null
   preferred_time: string | null
@@ -78,6 +81,7 @@ export type Admission = {
   amount: number
   status: AdmissionStatus
   subjects: string[]
+  subject_months: Record<string, number>
   created_at: string
   paid_at: string | null
 }
@@ -85,6 +89,206 @@ export type Admission = {
 export type AssessmentRequestDetails = AssessmentRequest & {
   student: Student | null
   parent: Pick<Profile, 'id' | 'full_name' | 'email' | 'phone'> | null
+  assigned_expert: Pick<Profile, 'id' | 'full_name' | 'email'> | null
+}
+
+export type WebAssessmentRequest = {
+  id: number
+  parent_name: string
+  student_name: string
+  email: string
+  phone: string | null
+  board: string
+  grade: string
+  subject: string
+  status: AssessmentStatus
+  assigned_expert_id: string | null
+  notes: string | null
+  referral: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type StudentWithParent = Student & {
+  parent: Pick<Profile, 'id' | 'full_name' | 'email' | 'phone'> | null
+}
+
+export type Parent = {
+  id: string
+  created_at: string
+  updated_at: string
+}
+
+export type Tutor = {
+  id: string
+  timezone: string
+  created_at: string
+  updated_at: string
+}
+
+export type QualityManager = {
+  id: string
+  created_at: string
+  updated_at: string
+}
+
+export type Batch = {
+  id: number
+  name: string
+  hero_full_name: string
+  subject: string
+  syllabus: string
+  grade: string
+  start_date: string
+  days_of_week: number[]
+  start_time: string
+  end_time: string
+  quality_manager_id: string
+  tutor_id: string
+  min_students: number
+  max_students: number
+  meeting_link: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type BatchStudent = {
+  id: number
+  batch_id: number
+  student_id: number
+  created_at: string
+}
+
+export type SessionStatus = 'scheduled' | 'completed' | 'cancelled'
+
+export type Session = {
+  id: number
+  batch_id: number
+  student_id: number
+  session_date: string
+  starts_at: string
+  ends_at: string
+  status: SessionStatus
+  attended: boolean | null
+  recording_link: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type StudentConsultant = {
+  id: string
+  created_at: string
+  updated_at: string
+}
+
+export type Syllabus = {
+  id: number
+  name: string
+  code: string
+  sort_order: number
+  created_at: string
+}
+
+export type Grade = {
+  id: number
+  label: string
+  sort_order: number
+  created_at: string
+}
+
+export type Subject = {
+  id: number
+  name: string
+  sort_order: number
+  created_at: string
+}
+
+export type SyllabusGradeSubject = {
+  syllabus_id: number
+  grade_id: number
+  subject_id: number
+  created_at: string
+}
+
+export type TutorScheduleSlot = {
+  id: number
+  tutor_id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+  created_at: string
+  updated_at: string
+}
+
+export type TutorVerificationStatus = 'pending' | 'verified' | 'rejected'
+
+export type TutorBankDetails = {
+  tutor_id: string
+  bank_name: string | null
+  account_holder_name: string | null
+  account_number: string | null
+  ifsc_code: string | null
+  branch: string | null
+  verification_status: TutorVerificationStatus
+  created_at: string
+  updated_at: string
+}
+
+export type TutorPanDetails = {
+  tutor_id: string
+  name_on_pan: string | null
+  date_of_birth: string | null
+  pan_number: string | null
+  verification_status: TutorVerificationStatus
+  created_at: string
+  updated_at: string
+}
+
+export type TutorSpecialization = {
+  id: number
+  tutor_id: string
+  subject: string
+  grade_range: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type TutorTeachingExperience = {
+  id: number
+  tutor_id: string
+  organization: string
+  role_title: string
+  start_date: string | null
+  end_date: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type TutorQualification = {
+  id: number
+  tutor_id: string
+  degree_title: string
+  institution: string
+  year_from: number | null
+  year_to: number | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type TutorProfileDetails = {
+  bank: TutorBankDetails | null
+  pan: TutorPanDetails | null
+  specializations: TutorSpecialization[]
+  experience: TutorTeachingExperience[]
+  qualifications: TutorQualification[]
+}
+
+export type ParentWithStudents = Profile & {
+  students: Student[]
 }
 
 export type Database = {
@@ -102,6 +306,279 @@ export type Database = {
         Update: {
           full_name?: string
           phone?: string | null
+        }
+        Relationships: []
+      }
+      parents: {
+        Row: Parent
+        Insert: {
+          id: string
+        }
+        Update: {
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tutors: {
+        Row: Tutor
+        Insert: {
+          id: string
+          timezone?: string
+        }
+        Update: {
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      batch_students: {
+        Row: BatchStudent
+        Insert: {
+          batch_id: number
+          student_id: number
+        }
+        Update: {
+          batch_id?: number
+          student_id?: number
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: Session
+        Insert: {
+          batch_id: number
+          student_id: number
+          session_date: string
+          starts_at: string
+          ends_at: string
+          status?: SessionStatus
+          attended?: boolean | null
+          recording_link?: string | null
+        }
+        Update: {
+          status?: SessionStatus
+          attended?: boolean | null
+          recording_link?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quality_managers: {
+        Row: QualityManager
+        Insert: {
+          id: string
+        }
+        Update: {
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      batches: {
+        Row: Batch
+        Insert: {
+          name: string
+          hero_full_name: string
+          subject: string
+          syllabus: string
+          grade: string
+          start_date: string
+          days_of_week: number[]
+          start_time: string
+          end_time: string
+          quality_manager_id: string
+          tutor_id: string
+          min_students?: number
+          max_students?: number
+          meeting_link?: string | null
+          notes?: string | null
+        }
+        Update: {
+          name?: string
+          hero_full_name?: string
+          subject?: string
+          syllabus?: string
+          grade?: string
+          start_date?: string
+          days_of_week?: number[]
+          start_time?: string
+          end_time?: string
+          quality_manager_id?: string
+          tutor_id?: string
+          min_students?: number
+          max_students?: number
+          meeting_link?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_consultants: {
+        Row: StudentConsultant
+        Insert: {
+          id: string
+        }
+        Update: {
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      grades: {
+        Row: Grade
+        Insert: {
+          label: string
+          sort_order: number
+        }
+        Update: {
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      syllabi: {
+        Row: Syllabus
+        Insert: {
+          name: string
+          code: string
+          sort_order: number
+        }
+        Update: {
+          name?: string
+          code?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: Subject
+        Insert: {
+          name: string
+          sort_order: number
+        }
+        Update: {
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      syllabus_grade_subjects: {
+        Row: SyllabusGradeSubject
+        Insert: {
+          syllabus_id: number
+          grade_id: number
+          subject_id: number
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      tutor_schedule_slots: {
+        Row: TutorScheduleSlot
+        Insert: {
+          tutor_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+        }
+        Update: {
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tutor_bank_details: {
+        Row: TutorBankDetails
+        Insert: {
+          tutor_id: string
+          bank_name?: string | null
+          account_holder_name?: string | null
+          account_number?: string | null
+          ifsc_code?: string | null
+          branch?: string | null
+          verification_status?: TutorVerificationStatus
+        }
+        Update: {
+          bank_name?: string | null
+          account_holder_name?: string | null
+          account_number?: string | null
+          ifsc_code?: string | null
+          branch?: string | null
+          verification_status?: TutorVerificationStatus
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tutor_pan_details: {
+        Row: TutorPanDetails
+        Insert: {
+          tutor_id: string
+          name_on_pan?: string | null
+          date_of_birth?: string | null
+          pan_number?: string | null
+          verification_status?: TutorVerificationStatus
+        }
+        Update: {
+          name_on_pan?: string | null
+          date_of_birth?: string | null
+          pan_number?: string | null
+          verification_status?: TutorVerificationStatus
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tutor_specializations: {
+        Row: TutorSpecialization
+        Insert: {
+          tutor_id: string
+          subject: string
+          grade_range: string
+          sort_order?: number
+        }
+        Update: {
+          subject?: string
+          grade_range?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tutor_teaching_experience: {
+        Row: TutorTeachingExperience
+        Insert: {
+          tutor_id: string
+          organization: string
+          role_title: string
+          start_date?: string | null
+          end_date?: string | null
+          sort_order?: number
+        }
+        Update: {
+          organization?: string
+          role_title?: string
+          start_date?: string | null
+          end_date?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tutor_qualifications: {
+        Row: TutorQualification
+        Insert: {
+          tutor_id: string
+          degree_title: string
+          institution: string
+          year_from?: number | null
+          year_to?: number | null
+          sort_order?: number
+        }
+        Update: {
+          degree_title?: string
+          institution?: string
+          year_from?: number | null
+          year_to?: number | null
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -154,6 +631,8 @@ export type Database = {
           student_id: number
           parent_id: string
           requested_by: string
+          subject?: string
+          assigned_expert_id?: string | null
           status?: AssessmentStatus
           preferred_date?: string | null
           preferred_time?: string | null
@@ -163,11 +642,36 @@ export type Database = {
           weak_subjects?: WeakSubjectNote[]
         }
         Update: {
+          subject?: string
+          assigned_expert_id?: string | null
           status?: AssessmentStatus
           notes?: string | null
           report?: string | null
           report_path?: string | null
           weak_subjects?: WeakSubjectNote[]
+        }
+        Relationships: []
+      }
+      web_assessment_requests: {
+        Row: WebAssessmentRequest
+        Insert: {
+          parent_name: string
+          student_name: string
+          email: string
+          phone?: string | null
+          board: string
+          grade: string
+          subject: string
+          status?: AssessmentStatus
+          assigned_expert_id?: string | null
+          notes?: string | null
+          referral?: string | null
+        }
+        Update: {
+          status?: AssessmentStatus
+          assigned_expert_id?: string | null
+          notes?: string | null
+          referral?: string | null
         }
         Relationships: []
       }
@@ -192,12 +696,14 @@ export type Database = {
           amount: number
           status?: AdmissionStatus
           subjects?: string[]
+          subject_months?: Record<string, number>
           paid_at?: string | null
         }
         Update: {
           amount?: number
           status?: AdmissionStatus
           subjects?: string[]
+          subject_months?: Record<string, number>
           paid_at?: string | null
         }
         Relationships: []
@@ -211,6 +717,7 @@ export type Database = {
       enquiry_status: EnquiryStatus
       assessment_status: AssessmentStatus
       admission_status: AdmissionStatus
+      session_status: SessionStatus
     }
   }
 }

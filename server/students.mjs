@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { canEnrolStudents, isInternalRole, normalizeRole } from './roles.mjs'
 
 const MAX_BODY_BYTES = 50_000
 
@@ -50,6 +51,293 @@ function json(res, status, body) {
   res.end(JSON.stringify(body))
 }
 
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+async function authenticateEnrolCaller(req, env) {
+  const url = supabaseUrl(env)
+  const anon = publishableKey(env)
+  const service = serviceRoleKey(env)
+  if (!url || !anon || !service) {
+    const error = new Error(
+      'Student accounts are not configured. Add SUPABASE_SERVICE_ROLE_KEY to the server .env (never prefix it with VITE_).',
+    )
+    error.status = 500
+    throw error
+  }
+
+  const token = bearerToken(req)
+  if (!token) {
+    const error = new Error('Please sign in again to enrol a student.')
+    error.status = 401
+    throw error
+  }
+
+  const publicClient = createClient(url, anon)
+  const {
+    data: { user: caller },
+    error: authError,
+  } = await publicClient.auth.getUser(token)
+  if (authError || !caller) {
+    const error = new Error('Please sign in again to enrol a student.')
+    error.status = 401
+    throw error
+  }
+
+  const admin = createClient(url, service)
+  const { data: callerProfile, error: profileError } = await admin
+    .from('profiles')
+    .select('id, role, email')
+    .eq('id', caller.id)
+    .maybeSingle()
+
+  if (profileError || !callerProfile) {
+    const error = new Error('Your profile was not found.')
+    error.status = 403
+    throw error
+  }
+  if (!canEnrolStudents(callerProfile.role)) {
+    const error = new Error('You do not have permission to enrol a student.')
+    error.status = 403
+    throw error
+  }
+
+  return { admin, callerProfile }
+}
+
+async function resolveEnrolParent(admin, callerProfile, bodyParentId) {
+  const callerRole = normalizeRole(callerProfile.role)
+
+  if (isInternalRole(callerRole)) {
+    if (!bodyParentId) {
+      const error = new Error('Select a parent account to enrol this student under.')
+      error.status = 400
+      throw error
+    }
+
+    const { data: parentRow, error: parentError } = await admin
+      .from('parents')
+      .select('id')
+      .eq('id', bodyParentId)
+      .maybeSingle()
+
+    if (parentError || !parentRow) {
+      const error = new Error('Parent account not found.')
+      error.status = 400
+      throw error
+    }
+
+    const { data: targetProfile, error: targetError } = await admin
+      .from('profiles')
+      .select('id, role, email')
+      .eq('id', bodyParentId)
+      .maybeSingle()
+
+    if (targetError || !targetProfile || normalizeRole(targetProfile.role) !== 'parent') {
+      const error = new Error('Parent account not found.')
+      error.status = 400
+      throw error
+    }
+
+    return {
+      parentId: targetProfile.id,
+      parentEmail: targetProfile.email,
+    }
+  }
+
+  if (bodyParentId && bodyParentId !== callerProfile.id) {
+    const error = new Error('You can only enrol students under your own account.')
+    error.status = 403
+    throw error
+  }
+
+  return {
+    parentId: callerProfile.id,
+    parentEmail: callerProfile.email,
+  }
+}
+
+export async function checkStudentEmailInUse(admin, email, parentEmail) {
+  const normalized = String(email || '')
+    .trim()
+    .toLowerCase()
+
+  if (!normalized) {
+    return { available: false, message: 'Enter a student email address.' }
+  }
+  if (!isValidEmail(normalized)) {
+    return { available: false, message: 'Enter a valid email address.' }
+  }
+  if (normalized === String(parentEmail || '').trim().toLowerCase()) {
+    return {
+      available: false,
+      message: 'Use a different email for the student login — not the parent email.',
+    }
+  }
+
+  const { data: profileMatch, error: profileError } = await admin
+    .from('profiles')
+    .select('id, role')
+    .eq('email', normalized)
+    .maybeSingle()
+
+  if (profileError) {
+    return { available: false, message: profileError.message }
+  }
+  if (profileMatch) {
+    return {
+      available: false,
+      message: 'This email is already registered on the platform',
+    }
+  }
+
+  const { data: studentMatch, error: studentError } = await admin
+    .from('students')
+    .select('id')
+    .eq('email', normalized)
+    .maybeSingle()
+
+  if (studentError) {
+    return { available: false, message: studentError.message }
+  }
+  if (studentMatch) {
+    return {
+      available: false,
+      message: 'This email is already registered on the platform',
+    }
+  }
+
+  return { available: true }
+}
+
+async function handleCheckEmail(req, res, env, query) {
+  if (req.method !== 'GET') {
+    json(res, 405, { error: 'Method not allowed.' })
+    return
+  }
+
+  try {
+    const { admin, callerProfile } = await authenticateEnrolCaller(req, env)
+    const bodyParentId = String(query.get('parent_id') || '').trim()
+    const email = String(query.get('email') || '').trim()
+    const { parentEmail } = await resolveEnrolParent(admin, callerProfile, bodyParentId)
+    const result = await checkStudentEmailInUse(admin, email, parentEmail)
+    json(res, 200, result)
+  } catch (error) {
+    json(res, error.status || 500, {
+      available: false,
+      message: error instanceof Error ? error.message : 'Unable to check this email.',
+    })
+  }
+}
+
+async function handleEnrol(req, res, env) {
+  if (req.method !== 'POST') {
+    json(res, 405, { error: 'Method not allowed.' })
+    return
+  }
+
+  try {
+    const { admin, callerProfile } = await authenticateEnrolCaller(req, env)
+    const body = await readJson(req)
+    const bodyParentId = String(body.parent_id || '').trim()
+    const { parentId, parentEmail } = await resolveEnrolParent(admin, callerProfile, bodyParentId)
+
+    const fullName = String(body.full_name || '').trim()
+    const email = String(body.email || '').trim().toLowerCase()
+    const city = String(body.city || '').trim()
+    const state = String(body.state || '').trim()
+    const grade = String(body.grade || '').trim()
+    const board = String(body.board || '').trim()
+    const schoolName = String(body.school_name || '').trim()
+    const password = String(body.password || '')
+
+    if (!fullName || !email || !password || !city || !state || !grade || !board || !schoolName) {
+      json(res, 400, { error: 'Please fill in every enrolment field.' })
+      return
+    }
+    if (password.length < 8) {
+      json(res, 400, { error: 'Student password must be at least 8 characters.' })
+      return
+    }
+
+    const emailCheck = await checkStudentEmailInUse(admin, email, parentEmail)
+    if (!emailCheck.available) {
+      json(res, 409, { error: emailCheck.message || 'This email is already in use.' })
+      return
+    }
+
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName },
+      app_metadata: { role: 'student' },
+    })
+
+    if (createError || !created.user) {
+      const message = createError?.message || 'Unable to create the student login.'
+      if (/already/i.test(message) || /registered/i.test(message)) {
+        json(res, 409, { error: 'That email already has an account. Use a different student email.' })
+        return
+      }
+      json(res, 400, { error: message })
+      return
+    }
+
+    const studentUserId = created.user.id
+    const { error: roleError } = await admin
+      .from('profiles')
+      .update({ role: 'student', full_name: fullName, email })
+      .eq('id', studentUserId)
+
+    if (roleError) {
+      await admin.auth.admin.deleteUser(studentUserId)
+      json(res, 500, { error: roleError.message })
+      return
+    }
+
+    const { data: student, error: insertError } = await admin
+      .from('students')
+      .insert({
+        parent_id: parentId,
+        user_id: studentUserId,
+        email,
+        full_name: fullName,
+        city,
+        state,
+        grade,
+        board,
+        school_name: schoolName,
+      })
+      .select('*')
+      .single()
+
+    if (insertError || !student) {
+      await admin.auth.admin.deleteUser(studentUserId)
+      json(res, 500, { error: insertError?.message || 'Unable to save the student record.' })
+      return
+    }
+
+    json(res, 200, {
+      ok: true,
+      student,
+    })
+  } catch (error) {
+    json(res, error.status || 500, {
+      error: error instanceof Error ? error.message : 'Unable to enrol this student.',
+    })
+  }
+}
+
+function requestRoute(req) {
+  const url = new URL(req.url || '/', 'http://local')
+  const pathname = url.pathname.replace(/\/+$/, '') || '/'
+  const apiPath = pathname.replace(/^\/api\/students/, '') || '/'
+  return { url, route: apiPath }
+}
+
 export function createStudentsMiddleware(env) {
   return async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -58,138 +346,21 @@ export function createStudentsMiddleware(env) {
       return
     }
 
-    if (req.method !== 'POST') {
-      json(res, 405, { error: 'Method not allowed.' })
+    const { url, route } = requestRoute(req)
+
+    if (route === '/check-email') {
+      await handleCheckEmail(req, res, env, url.searchParams)
       return
     }
 
-    const url = supabaseUrl(env)
-    const anon = publishableKey(env)
-    const service = serviceRoleKey(env)
-    if (!url || !anon || !service) {
-      json(res, 500, {
-        error:
-          'Student accounts are not configured. Add SUPABASE_SERVICE_ROLE_KEY to the server .env (never prefix it with VITE_).',
-      })
+    if (route === '/' || route === '') {
+      await handleEnrol(req, res, env)
       return
     }
 
-    try {
-      const token = bearerToken(req)
-      if (!token) {
-        json(res, 401, { error: 'Please sign in again to enrol a student.' })
-        return
-      }
-
-      const publicClient = createClient(url, anon)
-      const {
-        data: { user: parent },
-        error: authError,
-      } = await publicClient.auth.getUser(token)
-      if (authError || !parent) {
-        json(res, 401, { error: 'Please sign in again to enrol a student.' })
-        return
-      }
-
-      const admin = createClient(url, service)
-      const { data: parentProfile, error: profileError } = await admin
-        .from('profiles')
-        .select('id, role')
-        .eq('id', parent.id)
-        .maybeSingle()
-
-      if (profileError || !parentProfile) {
-        json(res, 403, { error: 'Your parent profile was not found.' })
-        return
-      }
-      if (!['parent', 'staff'].includes(parentProfile.role)) {
-        json(res, 403, { error: 'Only a parent account can enrol a student.' })
-        return
-      }
-
-      const body = await readJson(req)
-      const fullName = String(body.full_name || '').trim()
-      const email = String(body.email || '').trim().toLowerCase()
-      const city = String(body.city || '').trim()
-      const state = String(body.state || '').trim()
-      const grade = String(body.grade || '').trim()
-      const board = String(body.board || '').trim()
-      const schoolName = String(body.school_name || '').trim()
-      const password = String(body.password || '')
-
-      if (!fullName || !email || !password || !city || !state || !grade || !board || !schoolName) {
-        json(res, 400, { error: 'Please fill in every enrolment field.' })
-        return
-      }
-      if (password.length < 8) {
-        json(res, 400, { error: 'Student password must be at least 8 characters.' })
-        return
-      }
-      if (email === (parent.email || '').toLowerCase()) {
-        json(res, 400, { error: 'Use a different email for the student login — not the parent email.' })
-        return
-      }
-
-      const { data: created, error: createError } = await admin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: fullName },
-        app_metadata: { role: 'student' },
-      })
-
-      if (createError || !created.user) {
-        const message = createError?.message || 'Unable to create the student login.'
-        if (/already/i.test(message) || /registered/i.test(message)) {
-          json(res, 409, { error: 'That email already has an account. Use a different student email.' })
-          return
-        }
-        json(res, 400, { error: message })
-        return
-      }
-
-      const studentUserId = created.user.id
-      const { error: roleError } = await admin
-        .from('profiles')
-        .update({ role: 'student', full_name: fullName, email })
-        .eq('id', studentUserId)
-
-      if (roleError) {
-        await admin.auth.admin.deleteUser(studentUserId)
-        json(res, 500, { error: roleError.message })
-        return
-      }
-
-      const { data: student, error: insertError } = await admin
-        .from('students')
-        .insert({
-          parent_id: parent.id,
-          user_id: studentUserId,
-          email,
-          full_name: fullName,
-          city,
-          state,
-          grade,
-          board,
-          school_name: schoolName,
-        })
-        .select('*')
-        .single()
-
-      if (insertError || !student) {
-        await admin.auth.admin.deleteUser(studentUserId)
-        json(res, 500, { error: insertError?.message || 'Unable to save the student record.' })
-        return
-      }
-
-      json(res, 200, {
-        ok: true,
-        student,
-      })
-    } catch (error) {
-      json(res, 500, {
-        error: error instanceof Error ? error.message : 'Unable to enrol this student.',
-      })
-    }
+    json(res, 404, { error: 'Not found.' })
   }
 }
+
+// Backwards-compatible alias used by server.mjs
+export { createStudentsMiddleware as createStudentsApi }

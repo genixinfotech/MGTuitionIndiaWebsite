@@ -36,12 +36,14 @@ cp .env.example .env
 
 Add your ZeptoMail **API host** and **Send Mail Token** to `.env`. Do not prefix those values with `VITE_` — the token stays on the server.
 
-Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the Supabase project **Connect** dialog. Then run the SQL in `supabase/migrations/` in the Supabase SQL editor (this also creates the private `assessment-reports` storage bucket for PDFs). Promote staff or a student consultant with:
+Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the Supabase project **Connect** dialog. Then run the SQL in `supabase/migrations/` in the Supabase SQL editor (this also creates the private `assessment-reports` storage bucket for PDFs). Promote internal users with:
 
 ```sql
-update public.profiles set role = 'staff' where email = 'you@mgtuition.in';
-update public.profiles set role = 'student_consultant' where email = 'consultant@mgtuition.in';
+update public.profiles set role = 'admin' where email = 'you@mgtuition.in';
+update public.profiles set role = 'student-consultant' where email = 'consultant@mgtuition.in';
 ```
+
+Portal roles use lowercase with hyphens: `superadmin`, `admin`, `subject-expert`, `marketing-manager`, `hr-manager`, `accounts`, `quality-manager`, `student-consultant`, `student`, `tutor`, and `parent`.
 
 In Authentication → URL configuration, set the site URL to `http://localhost:5173` (and add `https://mgtuition.in` for production). Redirect URLs should include `/auth/callback` and `/update-password`.
 

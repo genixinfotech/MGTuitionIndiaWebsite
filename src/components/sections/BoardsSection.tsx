@@ -10,7 +10,7 @@ export function BoardsSection() {
   const { openTrial } = useTrial()
 
   return (
-    <section id="boards" className="relative overflow-hidden bg-[#f8fafc] px-4 py-24 md:px-6 md:py-32">
+    <section id="boards" className="relative overflow-hidden bg-gray-50 px-4 py-24 md:px-6 md:py-32">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-20 h-80 w-80 rounded-full bg-blue-400/10 blur-[100px]" />
         <div className="absolute -right-24 top-40 h-72 w-72 rounded-full bg-violet-400/10 blur-[100px]" />

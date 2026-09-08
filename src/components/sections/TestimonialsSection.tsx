@@ -85,7 +85,7 @@ export function TestimonialsSection() {
   const loop = [...testimonials, ...testimonials]
 
   return (
-    <section className="relative overflow-hidden bg-[#f8fafc] py-24 md:py-32">
+    <section className="relative overflow-hidden bg-gray-50 py-24 md:py-32">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-crimson/10 blur-[110px]" />
         <div className="absolute -right-16 bottom-0 h-72 w-72 rounded-full bg-indigo-400/10 blur-[100px]" />

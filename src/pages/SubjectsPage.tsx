@@ -23,7 +23,7 @@ export function SubjectsPage() {
         description="Live classes mapped to CBSE, ICSE and Cambridge IGCSE — personalised pace, clear goals, and tutors who know your syllabus inside out. IGCSE is offered one-to-one only."
       />
 
-      <section className="relative overflow-hidden bg-[#f8fafc] px-4 py-16 md:px-6 md:py-24">
+      <section className="relative overflow-hidden bg-gray-50 px-4 py-16 md:px-6 md:py-24">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -left-32 top-20 h-72 w-72 rounded-full bg-blue-400/10 blur-[100px]" />
           <div className="absolute -right-24 top-40 h-64 w-64 rounded-full bg-violet-400/10 blur-[100px]" />
@@ -37,7 +37,7 @@ export function SubjectsPage() {
 
       <PricingCarousel3D />
 
-      <section className="relative overflow-hidden bg-[#f8fafc] px-4 py-16 md:px-6 md:py-24">
+      <section className="relative overflow-hidden bg-gray-50 px-4 py-16 md:px-6 md:py-24">
         <div className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-violet-400/10 blur-[80px]" />
         <div className="pointer-events-none absolute -left-16 bottom-10 h-56 w-56 rounded-full bg-blue-400/10 blur-[80px]" />
 

@@ -69,7 +69,7 @@ export function AboutTeaserSection() {
             {highlights.map((item) => (
               <div
                 key={item.label}
-                className="rounded-2xl border border-charcoal/[0.06] bg-[#f8fafc] px-3 py-4 text-center"
+                className="rounded-2xl border border-charcoal/[0.06] bg-gray-50 px-3 py-4 text-center"
               >
                 <p className="text-xl font-extrabold text-crimson">{item.value}</p>
                 <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-charcoal/45">
