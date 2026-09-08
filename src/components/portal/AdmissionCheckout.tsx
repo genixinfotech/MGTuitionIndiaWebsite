@@ -13,6 +13,7 @@ import {
 import { formatInr } from '@/lib/tuition-plans'
 import { getPaymentProvider, isCardCheckoutEnabled } from '@/lib/payments'
 import { startTuitionCheckout } from '@/lib/payment-api'
+import { PaymentNoticeModal } from '@/components/portal/PaymentNoticeModal'
 import { site } from '@/lib/site'
 import {
   consultantWhatsappUrl,
@@ -195,14 +196,14 @@ export function AdmissionCheckout({
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape' && !payError) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = previous
       window.removeEventListener('keydown', onKey)
     }
-  }, [student, onClose])
+  }, [student, onClose, payError])
 
   const receiptWhatsappUrl = useMemo(() => {
     if (!student || !consultant) return null
@@ -218,9 +219,18 @@ export function AdmissionCheckout({
     )
   }, [student, consultant, amount, subjectNames])
 
-  return createPortal(
-    <AnimatePresence>
-      {student ? (
+  return (
+    <>
+      <PaymentNoticeModal
+        open={Boolean(payError)}
+        tone="error"
+        title="Payment could not be started"
+        message={payError}
+        onConfirm={() => setPayError('')}
+      />
+      {createPortal(
+        <AnimatePresence>
+          {student ? (
         <motion.div
           className="fixed inset-0 z-[70]"
           initial={{ opacity: 0 }}
@@ -231,7 +241,9 @@ export function AdmissionCheckout({
             type="button"
             className="absolute inset-0 bg-charcoal/55 backdrop-blur-sm"
             aria-label="Close payment"
-            onClick={onClose}
+            onClick={() => {
+              if (!payError) onClose()
+            }}
           />
           <motion.aside
             role="dialog"
@@ -340,12 +352,6 @@ export function AdmissionCheckout({
                 </div>
               )}
 
-              {payError ? (
-                <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-4 py-3 text-sm text-crimson">
-                  {payError}
-                </p>
-              ) : null}
-
               <StudentConsultantCard consultant={consultant} loading={loadingConsultant} />
             </div>
 
@@ -424,8 +430,10 @@ export function AdmissionCheckout({
             </div>
           </motion.aside>
         </motion.div>
-      ) : null}
-    </AnimatePresence>,
-    document.body,
+          ) : null}
+        </AnimatePresence>,
+        document.body,
+      )}
+    </>
   )
 }

@@ -33,6 +33,7 @@ import { StudentLoginEmailField } from '@/components/enrolment/StudentLoginEmail
 import { AssessmentRequestFlow } from '@/components/portal/AssessmentRequestFlow'
 import { AssessmentReportModal } from '@/components/portal/AssessmentReportModal'
 import { AdmissionCheckout } from '@/components/portal/AdmissionCheckout'
+import { PaymentNoticeModal, type PaymentNoticeTone } from '@/components/portal/PaymentNoticeModal'
 import { FormField, fieldClass } from '@/components/forms/FormField'
 import { useStudentEmailCheck } from '@/hooks/useStudentEmailCheck'
 import { useCurriculum, useGradesForSyllabus } from '@/hooks/useCurriculum'
@@ -101,7 +102,11 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
   const [form, setForm] = useState<EnrolmentForm>(emptyEnrolment)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [paymentNotice, setPaymentNotice] = useState('')
+  const [paymentNotice, setPaymentNotice] = useState<{
+    tone: PaymentNoticeTone
+    title: string
+    message: string
+  } | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const emailCheck = useStudentEmailCheck(form.email)
@@ -157,13 +162,32 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
     if (!status) return
 
     if (status === 'cancelled') {
-      setPaymentNotice('Payment was cancelled. You can try again whenever you are ready.')
+      setPaymentNotice({
+        tone: 'info',
+        title: 'Payment cancelled',
+        message: 'Payment was cancelled. You can try again whenever you are ready.',
+      })
+      setSearchParams({}, { replace: true })
+      return
+    }
+
+    if (status === 'success' && !sessionId) {
+      setPaymentNotice({
+        tone: 'error',
+        title: 'Payment could not be confirmed',
+        message: 'Stripe did not return a checkout session. Please try again or contact us if money was deducted.',
+      })
       setSearchParams({}, { replace: true })
       return
     }
 
     if (status === 'success' && sessionId) {
       let cancelled = false
+      setPaymentNotice({
+        tone: 'loading',
+        title: 'Confirming payment',
+        message: 'Please wait while we update admission and class sessions.',
+      })
       void confirmTuitionCheckout(sessionId)
         .then((admission) => {
           if (cancelled) return
@@ -171,11 +195,19 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
             admission,
             ...current.filter((item) => item.student_id !== admission.student_id),
           ])
-          setPaymentNotice('Payment received. Admission and class sessions are now updated.')
+          setPaymentNotice({
+            tone: 'success',
+            title: 'Payment received',
+            message: 'Admission and class sessions are now updated.',
+          })
         })
         .catch((err) => {
           if (!cancelled) {
-            setError(err instanceof Error ? err.message : 'Unable to confirm this payment.')
+            setPaymentNotice({
+              tone: 'error',
+              title: 'Payment could not be confirmed',
+              message: err instanceof Error ? err.message : 'Unable to confirm this payment.',
+            })
           }
         })
         .finally(() => {
@@ -271,11 +303,13 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
 
   return (
     <>
-      {paymentNotice ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          {paymentNotice}
-        </p>
-      ) : null}
+      <PaymentNoticeModal
+        open={Boolean(paymentNotice)}
+        tone={paymentNotice?.tone ?? 'info'}
+        title={paymentNotice?.title ?? ''}
+        message={paymentNotice?.message ?? ''}
+        onConfirm={() => setPaymentNotice(null)}
+      />
 
       {error && !panelOpen ? (
         <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-4 py-3 text-sm text-crimson">{error}</p>
