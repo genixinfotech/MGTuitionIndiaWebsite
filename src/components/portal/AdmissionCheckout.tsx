@@ -11,6 +11,8 @@ import {
   X,
 } from 'lucide-react'
 import { formatInr } from '@/lib/tuition-plans'
+import { getPaymentProvider, isCardCheckoutEnabled } from '@/lib/payments'
+import { startTuitionCheckout } from '@/lib/payment-api'
 import { site } from '@/lib/site'
 import {
   consultantWhatsappUrl,
@@ -130,8 +132,13 @@ export function AdmissionCheckout({
 }) {
   const [consultant, setConsultant] = useState<StudentConsultantContact | null>(null)
   const [loadingConsultant, setLoadingConsultant] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [payError, setPayError] = useState('')
+  const [provider, setProvider] = useState(getPaymentProvider)
+  const [cardReady, setCardReady] = useState(isCardCheckoutEnabled)
   const amount = subjects.reduce((sum, row) => sum + row.monthly_rate, 0)
   const subjectNames = useMemo(() => subjects.map((item) => item.subject), [subjects])
+  const useStripe = provider === 'stripe'
 
   useEffect(() => {
     if (!student) return
@@ -146,6 +153,37 @@ export function AdmissionCheckout({
       })
       .finally(() => {
         if (!cancelled) setLoadingConsultant(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [student])
+
+  useEffect(() => {
+    if (!student) return
+    let cancelled = false
+    void fetch('/api/payments')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { paymentProvider?: string; cardCheckoutEnabled?: boolean } | null) => {
+        if (cancelled || !data) return
+        if (
+          data.paymentProvider === 'stripe' ||
+          data.paymentProvider === 'razorpay' ||
+          data.paymentProvider === 'manual'
+        ) {
+          window.__MG_PUBLIC_CONFIG__ = {
+            ...window.__MG_PUBLIC_CONFIG__,
+            paymentProvider: data.paymentProvider,
+            cardCheckoutEnabled: Boolean(data.cardCheckoutEnabled),
+          }
+          setProvider(data.paymentProvider)
+        }
+        if (typeof data.cardCheckoutEnabled === 'boolean') {
+          setCardReady(data.cardCheckoutEnabled)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCardReady(isCardCheckoutEnabled())
       })
     return () => {
       cancelled = true
@@ -216,13 +254,17 @@ export function AdmissionCheckout({
                     : `${subjectNames.length} subjects`}
                 </h2>
                 <p className="mt-1 text-sm text-charcoal/50">
-                  {renewal
-                    ? subjectNames.length === 1
-                      ? `Pay the next month for ${subjectNames[0]} by UPI, then send your receipt to your student consultant on WhatsApp.`
-                      : `Pay the next month for ${subjectNames.join(', ')} by UPI, then send your receipt to your student consultant on WhatsApp.`
-                    : subjectNames.length === 1
-                      ? `Pay the first month for ${subjectNames[0]} by UPI, then send your receipt to your student consultant on WhatsApp.`
-                      : `Pay the first month for ${subjectNames.join(', ')} by UPI, then send your receipt to your student consultant on WhatsApp.`}
+                  {useStripe
+                    ? renewal
+                      ? `Pay the next month for ${subjectNames.join(', ')} securely with Stripe.`
+                      : `Pay the first month for ${subjectNames.join(', ')} securely with Stripe.`
+                    : renewal
+                      ? subjectNames.length === 1
+                        ? `Pay the next month for ${subjectNames[0]} by UPI, then send your receipt to your student consultant on WhatsApp.`
+                        : `Pay the next month for ${subjectNames.join(', ')} by UPI, then send your receipt to your student consultant on WhatsApp.`
+                      : subjectNames.length === 1
+                        ? `Pay the first month for ${subjectNames[0]} by UPI, then send your receipt to your student consultant on WhatsApp.`
+                        : `Pay the first month for ${subjectNames.join(', ')} by UPI, then send your receipt to your student consultant on WhatsApp.`}
                 </p>
               </div>
               <button
@@ -254,60 +296,131 @@ export function AdmissionCheckout({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-charcoal/[0.08] bg-white px-4 py-4">
-                <div className="flex items-center gap-2 font-semibold text-charcoal">
-                  <QrCode className="h-4 w-4 text-crimson" />
-                  Pay by UPI
-                </div>
-                <p className="mt-1 text-sm text-charcoal/50">
-                  Scan the QR code below and pay {formatInr(amount)}. A payment gateway will be added
-                  here soon.
-                </p>
-                <div className="mt-4 flex justify-center">
-                  <div className="rounded-2xl border border-charcoal/[0.08] bg-white p-3 shadow-sm">
-                    <img
-                      src={site.paymentUpiQr}
-                      alt="UPI payment QR code"
-                      className="h-52 w-52 object-contain"
-                    />
+              {useStripe ? (
+                <div className="rounded-2xl border border-charcoal/[0.08] bg-white px-4 py-4">
+                  <div className="flex items-center gap-2 font-semibold text-charcoal">
+                    <CreditCard className="h-4 w-4 text-crimson" />
+                    Pay with Stripe
                   </div>
-                </div>
-                {site.paymentUpiId ? (
-                  <p className="mt-3 text-center text-sm font-semibold text-charcoal/70">
-                    UPI ID: <span className="text-charcoal">{site.paymentUpiId}</span>
+                  <p className="mt-1 text-sm text-charcoal/50">
+                    You will be redirected to Stripe Checkout to pay {formatInr(amount)} by card.
+                    Admission is confirmed automatically after a successful payment.
                   </p>
-                ) : null}
-              </div>
+                  {cardReady ? null : (
+                    <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                      Stripe sandbox keys are not configured on this server yet. Add
+                      STRIPE_SECRET_KEY and restart the app.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-charcoal/[0.08] bg-white px-4 py-4">
+                  <div className="flex items-center gap-2 font-semibold text-charcoal">
+                    <QrCode className="h-4 w-4 text-crimson" />
+                    Pay by UPI
+                  </div>
+                  <p className="mt-1 text-sm text-charcoal/50">
+                    Scan the QR code below and pay {formatInr(amount)}. Razorpay checkout will
+                    replace this once sandbox access is ready.
+                  </p>
+                  <div className="mt-4 flex justify-center">
+                    <div className="rounded-2xl border border-charcoal/[0.08] bg-white p-3 shadow-sm">
+                      <img
+                        src={site.paymentUpiQr}
+                        alt="UPI payment QR code"
+                        className="h-52 w-52 object-contain"
+                      />
+                    </div>
+                  </div>
+                  {site.paymentUpiId ? (
+                    <p className="mt-3 text-center text-sm font-semibold text-charcoal/70">
+                      UPI ID: <span className="text-charcoal">{site.paymentUpiId}</span>
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
+              {payError ? (
+                <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-4 py-3 text-sm text-crimson">
+                  {payError}
+                </p>
+              ) : null}
 
               <StudentConsultantCard consultant={consultant} loading={loadingConsultant} />
             </div>
 
             <div className="border-t border-charcoal/[0.06] px-5 py-4">
-              {receiptWhatsappUrl ? (
-                <a
-                  href={receiptWhatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-primary w-full"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Send receipt on WhatsApp
-                </a>
+              {useStripe ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={!cardReady || paying || subjects.length === 0}
+                    onClick={() => {
+                      if (!student) return
+                      setPaying(true)
+                      setPayError('')
+                      void startTuitionCheckout({
+                        studentId: student.id,
+                        subjects,
+                        renewal,
+                      })
+                        .then((url) => {
+                          window.location.assign(url)
+                        })
+                        .catch((err) => {
+                          setPayError(err instanceof Error ? err.message : 'Unable to start Stripe checkout.')
+                          setPaying(false)
+                        })
+                    }}
+                    className="btn-primary w-full"
+                  >
+                    {paying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Redirecting to Stripe…
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4" />
+                        Pay {formatInr(amount)} with Stripe
+                      </>
+                    )}
+                  </button>
+                  <p className="mt-3 flex items-start gap-2 text-[11px] leading-snug text-charcoal/45">
+                    <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
+                    Use your Stripe test card in sandbox. Admission and class sessions update after
+                    payment succeeds.
+                  </p>
+                </>
               ) : (
-                <button type="button" disabled className="btn-primary w-full opacity-60">
-                  <MessageCircle className="h-4 w-4" />
-                  Send receipt on WhatsApp
-                </button>
+                <>
+                  {receiptWhatsappUrl ? (
+                    <a
+                      href={receiptWhatsappUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-primary w-full"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Send receipt on WhatsApp
+                    </a>
+                  ) : (
+                    <button type="button" disabled className="btn-primary w-full opacity-60">
+                      <MessageCircle className="h-4 w-4" />
+                      Send receipt on WhatsApp
+                    </button>
+                  )}
+                  <p className="mt-3 flex items-start gap-2 text-[11px] leading-snug text-charcoal/45">
+                    <UserRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
+                    After paying, open WhatsApp and attach your UPI payment screenshot or receipt. Your
+                    consultant will confirm admission once payment is verified.
+                  </p>
+                  <p className="mt-2 flex items-start gap-2 text-[11px] leading-snug text-charcoal/45">
+                    <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
+                    Razorpay checkout for India will be added once sandbox access is ready.
+                  </p>
+                </>
               )}
-              <p className="mt-3 flex items-start gap-2 text-[11px] leading-snug text-charcoal/45">
-                <UserRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
-                After paying, open WhatsApp and attach your UPI payment screenshot or receipt. Your
-                consultant will confirm admission once payment is verified.
-              </p>
-              <p className="mt-2 flex items-start gap-2 text-[11px] leading-snug text-charcoal/45">
-                <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
-                Card and net banking checkout will be available soon.
-              </p>
             </div>
           </motion.aside>
         </motion.div>

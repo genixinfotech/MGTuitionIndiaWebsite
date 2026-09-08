@@ -23,6 +23,10 @@ export function readRegion(): RegionId {
 
 let activeRegion: RegionId | null = null
 
+export function resetRegionCache() {
+  activeRegion = null
+}
+
 export function getRegion(): RegionId {
   if (!activeRegion) activeRegion = readRegion()
   return activeRegion

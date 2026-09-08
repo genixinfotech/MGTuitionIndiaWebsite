@@ -1,11 +1,15 @@
+import { paymentPublicConfig } from './payments.mjs'
 import { normalizeRegion } from './regions.mjs'
 
 export function readPublicConfig(env) {
-  const region = normalizeRegion(env.Region || env.VITE_REGION)
+  const region = normalizeRegion(
+    env.Region || env.VITE_REGION || process.env.Region || process.env.VITE_REGION,
+  )
   return {
     region,
-    supabaseUrl: (env.VITE_SUPABASE_URL || env.SUPABASE_URL || '').trim(),
-    supabaseKey: (env.VITE_SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '').trim(),
+    supabaseUrl: (env.VITE_SUPABASE_URL || env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim(),
+    supabaseKey: (env.VITE_SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim(),
+    ...paymentPublicConfig(env),
   }
 }
 

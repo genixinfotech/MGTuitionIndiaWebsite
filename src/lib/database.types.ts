@@ -86,6 +86,26 @@ export type Admission = {
   paid_at: string | null
 }
 
+export type TuitionPaymentProvider = 'stripe' | 'razorpay' | 'manual'
+export type TuitionPaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled'
+
+export type TuitionPayment = {
+  id: number
+  student_id: number
+  parent_id: string
+  provider: TuitionPaymentProvider
+  status: TuitionPaymentStatus
+  amount: number
+  currency: string
+  subjects: string[]
+  renewal: boolean
+  provider_session_id: string | null
+  provider_payment_id: string | null
+  receipt_url: string | null
+  created_at: string
+  paid_at: string | null
+}
+
 export type AssessmentRequestDetails = AssessmentRequest & {
   student: Student | null
   parent: Pick<Profile, 'id' | 'full_name' | 'email' | 'phone'> | null
@@ -688,6 +708,31 @@ export type Database = {
         }
         Relationships: []
       }
+      tuition_payments: {
+        Row: TuitionPayment
+        Insert: {
+          student_id: number
+          parent_id: string
+          provider: TuitionPaymentProvider
+          status?: TuitionPaymentStatus
+          amount: number
+          currency: string
+          subjects?: string[]
+          renewal?: boolean
+          provider_session_id?: string | null
+          provider_payment_id?: string | null
+          receipt_url?: string | null
+          paid_at?: string | null
+        }
+        Update: {
+          status?: TuitionPaymentStatus
+          provider_session_id?: string | null
+          provider_payment_id?: string | null
+          receipt_url?: string | null
+          paid_at?: string | null
+        }
+        Relationships: []
+      }
       admissions: {
         Row: Admission
         Insert: {
@@ -718,6 +763,8 @@ export type Database = {
       assessment_status: AssessmentStatus
       admission_status: AdmissionStatus
       session_status: SessionStatus
+      tuition_payment_provider: TuitionPaymentProvider
+      tuition_payment_status: TuitionPaymentStatus
     }
   }
 }

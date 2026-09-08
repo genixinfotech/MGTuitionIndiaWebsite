@@ -12,6 +12,7 @@ import {
   injectPublicConfig,
   readPublicConfig,
 } from './server/public-config.mjs'
+import { createPaymentsMiddleware } from './server/payments.mjs'
 import { getSiteBrand } from './server/regions.mjs'
 
 const Passenger = globalThis.PhusionPassenger
@@ -57,6 +58,7 @@ const parentsMiddleware = createParentsMiddleware(process.env)
 const tutorsMiddleware = createTutorsMiddleware(process.env)
 const usersMiddleware = createUsersMiddleware(process.env)
 const publicConfigMiddleware = createPublicConfigMiddleware(process.env)
+const paymentsMiddleware = createPaymentsMiddleware(process.env)
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -114,6 +116,11 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/public-config') {
     publicConfigMiddleware(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/payments' || url.pathname.startsWith('/api/payments/')) {
+    await paymentsMiddleware(req, res)
     return
   }
 

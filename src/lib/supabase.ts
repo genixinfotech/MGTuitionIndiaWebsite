@@ -5,6 +5,8 @@ type PublicConfig = {
   region?: string
   supabaseUrl?: string
   supabaseKey?: string
+  paymentProvider?: 'stripe' | 'razorpay' | 'manual'
+  cardCheckoutEnabled?: boolean
 }
 
 declare global {

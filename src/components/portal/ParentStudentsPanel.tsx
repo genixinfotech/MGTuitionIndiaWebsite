@@ -7,7 +7,7 @@ import {
   type FormEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   BookOpen,
@@ -62,6 +62,7 @@ import {
 import { getSupabase } from '@/lib/supabase'
 import { site } from '@/lib/site'
 import type { Admission, AssessmentRequest, Student, StudentSubject } from '@/lib/database.types'
+import { confirmTuitionCheckout } from '@/lib/payment-api'
 import { formatInr } from '@/lib/tuition-plans'
 
 export type ParentStudentsPanelHandle = {
@@ -85,6 +86,7 @@ export function ParentStudentActionButtons({ onEnrol }: { onEnrol: () => void })
 
 export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(function ParentStudentsPanel(_, ref) {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [students, setStudents] = useState<Student[]>([])
   const [assessmentRequests, setAssessmentRequests] = useState<AssessmentRequest[]>([])
   const [studentSubjects, setStudentSubjects] = useState<StudentSubject[]>([])
@@ -99,6 +101,7 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
   const [form, setForm] = useState<EnrolmentForm>(emptyEnrolment)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [paymentNotice, setPaymentNotice] = useState('')
   const [panelOpen, setPanelOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const emailCheck = useStudentEmailCheck(form.email)
@@ -147,6 +150,44 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
       .order('created_at', { ascending: false })
       .then(({ data }) => setAssessmentRequests((data ?? []) as AssessmentRequest[]))
   }, [user])
+
+  useEffect(() => {
+    const status = searchParams.get('payment')
+    const sessionId = searchParams.get('session_id')
+    if (!status) return
+
+    if (status === 'cancelled') {
+      setPaymentNotice('Payment was cancelled. You can try again whenever you are ready.')
+      setSearchParams({}, { replace: true })
+      return
+    }
+
+    if (status === 'success' && sessionId) {
+      let cancelled = false
+      void confirmTuitionCheckout(sessionId)
+        .then((admission) => {
+          if (cancelled) return
+          setAdmissions((current) => [
+            admission,
+            ...current.filter((item) => item.student_id !== admission.student_id),
+          ])
+          setPaymentNotice('Payment received. Admission and class sessions are now updated.')
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(err instanceof Error ? err.message : 'Unable to confirm this payment.')
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setSearchParams({}, { replace: true })
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    setSearchParams({}, { replace: true })
+  }, [searchParams, setSearchParams])
 
   function closePanel() {
     if (saving) return
@@ -230,6 +271,12 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
 
   return (
     <>
+      {paymentNotice ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {paymentNotice}
+        </p>
+      ) : null}
+
       {error && !panelOpen ? (
         <p className="rounded-xl border border-crimson/20 bg-crimson/5 px-4 py-3 text-sm text-crimson">{error}</p>
       ) : null}

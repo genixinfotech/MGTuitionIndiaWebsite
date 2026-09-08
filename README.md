@@ -26,6 +26,28 @@ If the document root serves static files from `dist/` directly (bypassing Node),
 
 Region-specific copy, pricing, offices, and location dropdowns live in `src/lib/regions/india.ts` and `src/lib/regions/gcc.ts`.
 
+## Payments
+
+| Region | Gateway | Status |
+|--------|---------|--------|
+| GCC | Stripe Checkout | Live in sandbox when `STRIPE_SECRET_KEY` is set |
+| India | UPI + consultant confirmation | Razorpay will replace this after sandbox access |
+
+Add these **server-only** variables (never prefix with `VITE_`):
+
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+Apply `supabase/migrations/20260908130000_tuition_payments.sql`. For local Stripe webhooks:
+
+```bash
+stripe listen --forward-to localhost:5173/api/payments/webhook
+```
+
+Then put the CLI webhook secret in `STRIPE_WEBHOOK_SECRET` and restart `npm run dev`. Successful GCC checkouts return to `/portal/students` and mark admission + class sessions paid automatically.
+
 ## Setup
 
 ```bash
