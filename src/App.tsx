@@ -26,6 +26,7 @@ import { PortalStudentsPage } from '@/pages/portal/PortalStudentsPage'
 import { PortalStudentProfilePage } from '@/pages/portal/PortalStudentProfilePage'
 import { PortalProfilePage } from '@/pages/portal/PortalProfilePage'
 import { PortalClassesPage } from '@/pages/portal/PortalClassesPage'
+import { PortalReceiptsPage } from '@/pages/portal/PortalReceiptsPage'
 import { portalAccessRoles } from '@/lib/portal-nav'
 import { OneViewLayout } from '@/pages/oneview/OneViewLayout'
 import { OneViewOverviewPage } from '@/pages/oneview/OneViewOverviewPage'
@@ -38,6 +39,7 @@ import { OneViewWebAssessmentsPage } from '@/pages/oneview/OneViewWebAssessments
 import { OneViewPortalAssessmentsPage } from '@/pages/oneview/OneViewPortalAssessmentsPage'
 import { OneViewHrPage } from '@/pages/oneview/OneViewHrPage'
 import { OneViewHrTutorEnquiriesPage } from '@/pages/oneview/OneViewHrTutorEnquiriesPage'
+import { OneViewFinancePage } from '@/pages/oneview/OneViewFinancePage'
 import { OneViewSectionPage } from '@/pages/oneview/OneViewSectionPage'
 import { OneViewUsersPage } from '@/pages/oneview/OneViewUsersPage'
 import { OneViewOperationsPage } from '@/pages/oneview/OneViewOperationsPage'
@@ -89,6 +91,7 @@ export default function App() {
               <Route path="students/:studentId" element={<PortalStudentProfilePage />} />
               <Route path="profile" element={<PortalProfilePage />} />
               <Route path="classes" element={<PortalClassesPage />} />
+              <Route path="receipts" element={<PortalReceiptsPage />} />
             </Route>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/student" element={<StudentPortalPage />} />
@@ -113,7 +116,7 @@ export default function App() {
               <Route path="assessments/web" element={<OneViewWebAssessmentsPage />} />
               <Route path="assessments/portal" element={<OneViewPortalAssessmentsPage />} />
               <Route path="admissions" element={<OneViewSectionPage />} />
-              <Route path="finance" element={<OneViewSectionPage />} />
+              <Route path="finance" element={<OneViewFinancePage />} />
               <Route path="marketing" element={<OneViewSectionPage />} />
               <Route path="hr" element={<OneViewHrPage />} />
               <Route path="hr/tutor-enquiries" element={<OneViewHrTutorEnquiriesPage />} />

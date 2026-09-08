@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap, LayoutDashboard, UserRound } from 'lucide-react'
+import { BookOpen, GraduationCap, LayoutDashboard, Receipt, UserRound } from 'lucide-react'
 import {
   createNavItemForPath,
   createNavSubItemForPath,
@@ -20,6 +20,13 @@ export const portalNavItems: DashboardNavItem[] = [
     label: 'Students',
     path: '/portal/students',
     icon: GraduationCap,
+    roles: ['parent'],
+  },
+  {
+    id: 'receipts',
+    label: 'Receipts',
+    path: '/portal/receipts',
+    icon: Receipt,
     roles: ['parent'],
   },
   {

@@ -64,6 +64,7 @@ import { getSupabase } from '@/lib/supabase'
 import { site } from '@/lib/site'
 import type { Admission, AssessmentRequest, Student, StudentSubject } from '@/lib/database.types'
 import { confirmTuitionCheckout } from '@/lib/payment-api'
+import type { TuitionPaymentReceipt } from '@/lib/payments'
 import { formatInr } from '@/lib/tuition-plans'
 
 export type ParentStudentsPanelHandle = {
@@ -106,6 +107,7 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
     tone: PaymentNoticeTone
     title: string
     message: string
+    receipt?: TuitionPaymentReceipt | null
   } | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -189,7 +191,7 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
         message: 'Please wait while we update admission and class sessions.',
       })
       void confirmTuitionCheckout(sessionId)
-        .then((admission) => {
+        .then(({ admission, receipt }) => {
           if (cancelled) return
           setAdmissions((current) => [
             admission,
@@ -199,6 +201,7 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
             tone: 'success',
             title: 'Payment received',
             message: 'Admission and class sessions are now updated.',
+            receipt,
           })
         })
         .catch((err) => {
@@ -308,6 +311,7 @@ export const ParentStudentsPanel = forwardRef<ParentStudentsPanelHandle>(functio
         tone={paymentNotice?.tone ?? 'info'}
         title={paymentNotice?.title ?? ''}
         message={paymentNotice?.message ?? ''}
+        receipt={paymentNotice?.receipt}
         onConfirm={() => setPaymentNotice(null)}
       />
 

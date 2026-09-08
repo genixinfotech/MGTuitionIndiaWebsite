@@ -1,24 +1,58 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Download, Loader2 } from 'lucide-react'
+import {
+  formatReceiptAmount,
+  formatReceiptDate,
+  type TuitionPaymentReceipt,
+} from '@/lib/payments'
+import { downloadPaymentReceiptPdf } from '@/lib/payment-receipt-pdf'
 
 export type PaymentNoticeTone = 'success' | 'error' | 'info' | 'loading'
+
+function ReceiptDetails({ receipt }: { receipt: TuitionPaymentReceipt }) {
+  const rows = [
+    { label: 'Receipt number', value: receipt.receiptNumber },
+    { label: 'Transaction date', value: formatReceiptDate(receipt.paidAt) },
+    { label: 'Amount paid', value: formatReceiptAmount(receipt.amount, receipt.currency) },
+    { label: 'Student', value: receipt.studentName },
+    {
+      label: 'Subjects',
+      value: receipt.subjects.length > 0 ? receipt.subjects.join(', ') : 'Tuition fee',
+    },
+    receipt.transactionId ? { label: 'Stripe transaction ID', value: receipt.transactionId } : null,
+  ].filter(Boolean) as Array<{ label: string; value: string }>
+
+  return (
+    <dl className="mt-5 space-y-2.5 rounded-2xl border border-charcoal/[0.08] bg-gray-50 px-4 py-3 text-left">
+      {rows.map((row) => (
+        <div key={row.label} className="grid grid-cols-[7.5rem_1fr] items-start gap-3">
+          <dt className="text-[11px] font-semibold uppercase tracking-wider text-charcoal/40">{row.label}</dt>
+          <dd className="break-all text-sm font-semibold text-charcoal">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
 
 export function PaymentNoticeModal({
   open,
   tone,
   title,
   message,
+  receipt,
   onConfirm,
 }: {
   open: boolean
   tone: PaymentNoticeTone
   title: string
   message: string
+  receipt?: TuitionPaymentReceipt | null
   onConfirm?: () => void
 }) {
   const waiting = tone === 'loading'
+  const showReceipt = tone === 'success' && Boolean(receipt)
 
   useEffect(() => {
     if (!open) return
@@ -65,7 +99,7 @@ export function PaymentNoticeModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="relative z-10 w-full max-w-md rounded-[28px] bg-white px-6 py-8 text-center shadow-[0_32px_80px_-24px_rgba(0,0,0,0.45)]"
+            className="relative z-10 w-full max-w-lg rounded-[28px] bg-white px-6 py-8 text-center shadow-[0_32px_80px_-24px_rgba(0,0,0,0.45)]"
           >
             <div className="flex justify-center">{icon}</div>
             <h2 id="payment-notice-title" className="mt-4 text-xl font-extrabold tracking-tight text-charcoal">
@@ -74,10 +108,23 @@ export function PaymentNoticeModal({
             <p id="payment-notice-message" className="mt-2 text-sm leading-relaxed text-charcoal/60">
               {message}
             </p>
+            {showReceipt && receipt ? <ReceiptDetails receipt={receipt} /> : null}
             {waiting ? null : (
-              <button type="button" autoFocus onClick={onConfirm} className="btn-primary mt-7 w-full">
-                OK
-              </button>
+              <div className="mt-7 flex flex-col gap-2">
+                {showReceipt && receipt ? (
+                  <button
+                    type="button"
+                    onClick={() => downloadPaymentReceiptPdf(receipt)}
+                    className="btn-outline w-full"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download receipt PDF
+                  </button>
+                ) : null}
+                <button type="button" autoFocus={!showReceipt} onClick={onConfirm} className="btn-primary w-full">
+                  OK
+                </button>
+              </div>
             )}
           </motion.div>
         </motion.div>

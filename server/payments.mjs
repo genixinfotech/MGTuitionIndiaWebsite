@@ -181,6 +181,68 @@ async function applyPaidAdmission(admin, payment) {
   return data
 }
 
+function stripeCharge(session) {
+  const intent = session?.payment_intent
+  if (!intent || typeof intent === 'string') return null
+  const charge = intent.latest_charge
+  if (!charge || typeof charge === 'string') return null
+  return charge
+}
+
+function paymentIntentId(session, payment) {
+  const intent = session?.payment_intent
+  if (typeof intent === 'string' && intent) return intent
+  if (intent?.id) return intent.id
+  return payment?.provider_payment_id || null
+}
+
+function receiptNumberFor(payment, _charge) {
+  return `MGT-${String(payment.id).padStart(6, '0')}`
+}
+
+function paidAtIso(payment, session, charge) {
+  if (payment?.paid_at) return payment.paid_at
+  const unix = Number(charge?.created || session?.created || 0)
+  if (unix > 0) return new Date(unix * 1000).toISOString()
+  return new Date().toISOString()
+}
+
+function stripePaymentExtras(session) {
+  const charge = stripeCharge(session)
+  return {
+    provider_payment_id: paymentIntentId(session, null),
+    receipt_url: charge?.receipt_url || null,
+  }
+}
+
+async function buildPaymentReceipt(admin, payment, session, parentEmail) {
+  const { data: student } = await admin
+    .from('students')
+    .select('full_name')
+    .eq('id', payment.student_id)
+    .maybeSingle()
+  const charge = stripeCharge(session)
+  const amountTotal = Number(session?.amount_total)
+  return {
+    receiptNumber: receiptNumberFor(payment, charge),
+    transactionId: paymentIntentId(session, payment),
+    sessionId: session?.id || payment.provider_session_id || null,
+    paidAt: paidAtIso(payment, session, charge),
+    amount: Number.isFinite(amountTotal) && amountTotal > 0 ? amountTotal / 100 : payment.amount,
+    currency: String(session?.currency || payment.currency || 'usd').toUpperCase(),
+    studentName: student?.full_name || 'Student',
+    parentEmail: parentEmail || null,
+    subjects: Array.isArray(payment.subjects) ? payment.subjects : [],
+    renewal: Boolean(payment.renewal),
+    provider: payment.provider,
+  }
+}
+
+async function loadAdmissionForStudent(admin, studentId) {
+  const { data } = await admin.from('admissions').select('*').eq('student_id', studentId).maybeSingle()
+  return data ?? null
+}
+
 async function markPaymentPaid(admin, paymentId, extras = {}) {
   const { data, error } = await admin
     .from('tuition_payments')
@@ -209,31 +271,26 @@ async function fulfillCheckoutSession(env, session) {
   if (error) throw new Error(error.message || 'Unable to load payment.')
   if (!payment) throw new Error('Payment record was not found.')
   if (payment.status === 'paid') {
-    const { data: admission } = await admin
-      .from('admissions')
-      .select('*')
-      .eq('student_id', payment.student_id)
-      .maybeSingle()
-    return admission
+    return {
+      admission: await loadAdmissionForStudent(admin, payment.student_id),
+      payment,
+    }
   }
 
-  const updated = await markPaymentPaid(admin, payment.id, {
-    provider_payment_id: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
-    receipt_url: session.url ?? null,
-  })
+  const updated = await markPaymentPaid(admin, payment.id, stripePaymentExtras(session))
   if (!updated) {
-    const { data: admission } = await admin
-      .from('admissions')
-      .select('*')
-      .eq('student_id', payment.student_id)
-      .maybeSingle()
-    return admission
+    const { data: latest } = await admin.from('tuition_payments').select('*').eq('id', payment.id).maybeSingle()
+    return {
+      admission: await loadAdmissionForStudent(admin, payment.student_id),
+      payment: latest ?? payment,
+    }
   }
 
-  return applyPaidAdmission(admin, {
+  const admission = await applyPaidAdmission(admin, {
     ...updated,
     subjects: updated.subjects ?? payment.subjects,
   })
+  return { admission, payment: updated }
 }
 
 async function createCheckout(req, res, env) {
@@ -341,7 +398,9 @@ async function confirmCheckout(req, res, env) {
   }
 
   const stripe = stripeClient(env)
-  const session = await stripe.checkout.sessions.retrieve(sessionId)
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ['payment_intent.latest_charge'],
+  })
   if (session.metadata?.parent_id && session.metadata.parent_id !== user.id) {
     json(res, 403, { error: 'This payment does not belong to your account.' })
     return
@@ -351,8 +410,13 @@ async function confirmCheckout(req, res, env) {
     return
   }
 
-  const admission = await fulfillCheckoutSession(env, session)
-  json(res, 200, { admission })
+  const { admission, payment } = await fulfillCheckoutSession(env, session)
+  if (!admission || !payment) {
+    json(res, 500, { error: 'Unable to confirm this payment.' })
+    return
+  }
+  const receipt = await buildPaymentReceipt(adminClient(env), payment, session, user.email)
+  json(res, 200, { admission, receipt })
 }
 
 async function handleWebhook(req, res, env) {

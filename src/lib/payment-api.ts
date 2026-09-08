@@ -1,6 +1,7 @@
 import { getSupabase } from '@/lib/supabase'
 import { syncStudentSessions } from '@/lib/sessions'
 import type { Admission } from '@/lib/database.types'
+import type { TuitionPaymentReceipt } from '@/lib/payments'
 
 async function authHeaders() {
   const { data, error } = await getSupabase().auth.getSession()
@@ -36,10 +37,14 @@ export async function confirmTuitionCheckout(sessionId: string) {
     headers: await authHeaders(),
     body: JSON.stringify({ sessionId }),
   })
-  const payload = (await res.json()) as { error?: string; admission?: Admission }
+  const payload = (await res.json()) as {
+    error?: string
+    admission?: Admission
+    receipt?: TuitionPaymentReceipt
+  }
   if (!res.ok || !payload.admission) {
     throw new Error(payload.error || 'Unable to confirm this payment.')
   }
   await syncStudentSessions(payload.admission.student_id)
-  return payload.admission
+  return { admission: payload.admission, receipt: payload.receipt ?? null }
 }
