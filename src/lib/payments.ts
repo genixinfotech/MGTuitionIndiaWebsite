@@ -10,8 +10,10 @@ export type TuitionPaymentReceipt = {
   amount: number
   currency: string
   studentName: string
+  studentGrade?: string | null
   parentEmail: string | null
   subjects: string[]
+  coverage: import('@/lib/class-billing').ClassBillingLine[]
   renewal: boolean
   provider: PaymentProvider
 }

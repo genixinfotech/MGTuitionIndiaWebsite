@@ -6,6 +6,7 @@ import { OneViewPagination } from '@/components/oneview/OneViewPagination'
 import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge'
 import { usePagination } from '@/hooks/usePagination'
 import { matchesLetterFilter, type LetterFilter } from '@/lib/oneview-filters'
+import { receiptCoverageText } from '@/lib/class-billing'
 import { formatReceiptAmount, formatReceiptDate, receiptNumberForPayment } from '@/lib/payments'
 import { downloadPaymentReceiptPdf } from '@/lib/payment-receipt-pdf'
 import type { TuitionPaymentStatus } from '@/lib/database.types'
@@ -185,7 +186,11 @@ export function OneViewFinancePage() {
                         <p className="font-semibold text-charcoal">{receipt.receiptNumber}</p>
                         <p className="mt-0.5 text-xs text-charcoal/45">
                           {paymentProviderLabels[payment.provider]}
-                          {payment.renewal ? ' · Renewal' : ''}
+                          {receipt.coverage.length > 0
+                            ? ` · ${receipt.coverage.map((line) => line.monthLabel).join(', ')}`
+                            : payment.renewal
+                              ? ' · Renewal'
+                              : ''}
                         </p>
                       </td>
                       <td className="px-5 py-3.5">
@@ -193,7 +198,12 @@ export function OneViewFinancePage() {
                         <p className="mt-0.5 text-charcoal/50">{payment.parent?.full_name || payment.parent?.email || '—'}</p>
                       </td>
                       <td className="px-5 py-3.5 text-charcoal/70">
-                        {payment.subjects.length > 0 ? payment.subjects.join(', ') : '—'}
+                        {receiptCoverageText({
+                          coverage: receipt.coverage,
+                          subjects: payment.subjects,
+                          paidAt: receipt.paidAt,
+                          grade: receipt.studentGrade,
+                        }) || '—'}
                       </td>
                       <td className="whitespace-nowrap px-5 py-3.5 font-semibold text-charcoal">
                         {formatReceiptAmount(payment.amount, payment.currency)}

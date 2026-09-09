@@ -3,6 +3,8 @@ import { ensurePublicConfig } from '@/lib/public-config'
 
 async function bootstrap() {
   await ensurePublicConfig()
+  const { loadTuitionPlans } = await import('@/lib/tuition-plans')
+  await loadTuitionPlans()
 
   const { StrictMode } = await import('react')
   const { createRoot } = await import('react-dom/client')

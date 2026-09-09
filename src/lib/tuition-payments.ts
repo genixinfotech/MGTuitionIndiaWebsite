@@ -1,10 +1,12 @@
 import { getSupabase } from '@/lib/supabase'
 import type { TuitionPayment, TuitionPaymentStatus } from '@/lib/database.types'
+import { isClassBillingLine, type ClassBillingLine } from '@/lib/class-billing'
 import { receiptNumberForPayment, type TuitionPaymentReceipt } from '@/lib/payments'
 
 export type TuitionPaymentPerson = {
   full_name: string | null
   email: string | null
+  grade?: string | null
 }
 
 export type TuitionPaymentWithPeople = TuitionPayment & {
@@ -23,10 +25,13 @@ function asPerson(value: PaymentRow['student']): TuitionPaymentPerson | null {
 }
 
 function normalizePayment(row: PaymentRow): TuitionPaymentWithPeople {
-  const subjects = Array.isArray(row.subjects) ? row.subjects.map(String) : []
+  const subjects = Array.isArray(row.subjects)
+    ? row.subjects.map((item) => (typeof item === 'string' ? item : String(item)))
+    : []
   return {
     ...row,
     subjects,
+    coverage: Array.isArray(row.coverage) ? row.coverage : [],
     student: asPerson(row.student),
     parent: asPerson(row.parent),
   }
@@ -38,7 +43,7 @@ export async function listTuitionPayments() {
     .select(
       `
       *,
-      student:students!student_id ( full_name, email ),
+      student:students!student_id ( full_name, email, grade ),
       parent:profiles!parent_id ( full_name, email )
     `,
     )
@@ -49,6 +54,7 @@ export async function listTuitionPayments() {
 }
 
 export function receiptFromPayment(payment: TuitionPaymentWithPeople): TuitionPaymentReceipt {
+  const coverage = (payment.coverage ?? []).filter(isClassBillingLine) as ClassBillingLine[]
   return {
     receiptNumber: receiptNumberForPayment(payment.id),
     transactionId: payment.provider_payment_id,
@@ -57,8 +63,10 @@ export function receiptFromPayment(payment: TuitionPaymentWithPeople): TuitionPa
     amount: payment.amount,
     currency: payment.currency || 'USD',
     studentName: payment.student?.full_name || 'Student',
+    studentGrade: payment.student?.grade || null,
     parentEmail: payment.parent?.email || null,
     subjects: payment.subjects,
+    coverage,
     renewal: payment.renewal,
     provider: payment.provider,
   }

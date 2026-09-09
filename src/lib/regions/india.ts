@@ -1,4 +1,9 @@
 import type { RegionBundle, TuitionPlan } from '@/lib/regions/types'
+import {
+  filterPlansForBoard,
+  monthlyRateFromPlans,
+  sessionsFromPlans,
+} from '@/lib/tuition-plan-lookup'
 
 const sharedBoards = [
   {
@@ -55,6 +60,7 @@ const sharedBoards = [
 ] as const
 
 const tuitionPlans: TuitionPlan[] = [
+  // Fallback catalog if tuition_plans has not loaded yet. Canonical rates live in the database.
   { grade: '4th Grade/Class', sessionsMin: 8, sessionsMax: 8, rate: 2500 },
   { grade: '5th Grade/Class', sessionsMin: 8, sessionsMax: 8, rate: 2500 },
   { grade: '6th Grade/Class', sessionsMin: 8, sessionsMax: 8, rate: 2500 },
@@ -71,43 +77,18 @@ function formatInr(amount: number) {
 }
 
 function monthlyRateForGrade(grade: string | null | undefined) {
-  const number = grade?.match(/\d+/)?.[0]
-  if (!number) return 3000
-  const plan = tuitionPlans.find(
-    (item) =>
-      item.grade.startsWith(`${number}th`) ||
-      item.grade.startsWith(`${number}st`) ||
-      item.grade.startsWith(`${number}nd`) ||
-      item.grade.startsWith(`${number}rd`),
-  )
-  if (plan) return plan.rate
-  const n = Number(number)
-  if (n <= 7) return 2500
-  if (n <= 9) return 3000
-  return 3500
+  const n = Number(grade?.match(/\d+/)?.[0] || 0)
+  const fallback = !n ? 3000 : n <= 7 ? 2500 : n <= 9 ? 3000 : 3500
+  return monthlyRateFromPlans(tuitionPlans, grade, fallback)
 }
 
 function sessionsPerMonthForGrade(grade: string | null | undefined) {
-  const number = grade?.match(/\d+/)?.[0]
-  if (!number) return 8
-  const plan = tuitionPlans.find(
-    (item) =>
-      item.grade.startsWith(`${number}th`) ||
-      item.grade.startsWith(`${number}st`) ||
-      item.grade.startsWith(`${number}nd`) ||
-      item.grade.startsWith(`${number}rd`),
-  )
-  if (plan) return plan.sessionsMin
-  const n = Number(number)
-  if (n <= 9) return 8
-  return 12
+  const n = Number(grade?.match(/\d+/)?.[0] || 0)
+  return sessionsFromPlans(tuitionPlans, grade, n >= 10 ? 12 : 8)
 }
 
 function plansForBoard(boardId: 'cbse' | 'icse' | 'igcse') {
-  if (boardId === 'igcse') {
-    return tuitionPlans.filter((plan) => Number(plan.grade.match(/^(\d+)/)?.[1]) >= 6)
-  }
-  return tuitionPlans
+  return filterPlansForBoard(tuitionPlans, boardId)
 }
 
 export const indianStates = [

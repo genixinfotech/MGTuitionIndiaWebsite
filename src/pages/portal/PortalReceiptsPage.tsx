@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Download, Loader2, Receipt } from 'lucide-react'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { PaymentStatusBadge } from '@/components/payments/PaymentStatusBadge'
+import { receiptCoverageText } from '@/lib/class-billing'
 import { formatReceiptAmount, formatReceiptDate } from '@/lib/payments'
 import { downloadPaymentReceiptPdf } from '@/lib/payment-receipt-pdf'
 import {
@@ -81,8 +82,12 @@ export function PortalReceiptsPage() {
                 </p>
                 <p className="mt-1 text-sm text-charcoal/50">{formatReceiptDate(receipt.paidAt)}</p>
                 <p className="mt-3 text-sm text-charcoal/70">
-                  {receipt.subjects.length > 0 ? receipt.subjects.join(', ') : 'Tuition fee'}
-                  {receipt.renewal ? ' · Next month' : ' · First month'}
+                  {receiptCoverageText({
+                    coverage: receipt.coverage,
+                    subjects: receipt.subjects,
+                    paidAt: receipt.paidAt,
+                    grade: receipt.studentGrade,
+                  })}
                 </p>
                 <button
                   type="button"

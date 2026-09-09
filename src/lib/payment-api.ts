@@ -2,6 +2,7 @@ import { getSupabase } from '@/lib/supabase'
 import { syncStudentSessions } from '@/lib/sessions'
 import type { Admission } from '@/lib/database.types'
 import type { TuitionPaymentReceipt } from '@/lib/payments'
+import type { ClassBillingLine } from '@/lib/class-billing'
 
 async function authHeaders() {
   const { data, error } = await getSupabase().auth.getSession()
@@ -11,6 +12,32 @@ async function authHeaders() {
   return {
     Authorization: `Bearer ${data.session.access_token}`,
     'Content-Type': 'application/json',
+  }
+}
+
+export async function quoteTuitionCheckout(input: {
+  studentId: number
+  subjects: Array<{ subject: string; monthly_rate: number }>
+  renewal?: boolean
+}) {
+  const res = await fetch('/api/payments/quote', {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(input),
+  })
+  const payload = (await res.json()) as {
+    error?: string
+    coverage?: ClassBillingLine[]
+    amount?: number
+    currency?: string
+  }
+  if (!res.ok || !payload.coverage) {
+    throw new Error(payload.error || 'Unable to calculate this payment.')
+  }
+  return {
+    coverage: payload.coverage,
+    amount: payload.amount ?? payload.coverage.reduce((sum, line) => sum + line.amount, 0),
+    currency: payload.currency || 'USD',
   }
 }
 
@@ -46,5 +73,8 @@ export async function confirmTuitionCheckout(sessionId: string) {
     throw new Error(payload.error || 'Unable to confirm this payment.')
   }
   await syncStudentSessions(payload.admission.student_id)
-  return { admission: payload.admission, receipt: payload.receipt ?? null }
+  const receipt = payload.receipt
+    ? { ...payload.receipt, coverage: payload.receipt.coverage ?? [] }
+    : null
+  return { admission: payload.admission, receipt }
 }

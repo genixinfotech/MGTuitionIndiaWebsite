@@ -40,7 +40,11 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-Apply `supabase/migrations/20260908130000_tuition_payments.sql`. For local Stripe webhooks:
+Apply `supabase/migrations/20260908130000_tuition_payments.sql`, `supabase/migrations/20260908140000_payment_coverage.sql`, and `supabase/migrations/20260909125351_tuition_plans.sql` in the Supabase SQL editor for **each** region project. `tuition_plans` stores India rates in INR and GCC rates in USD; the app loads the rows that match `Region`.
+
+Batches run a **fixed number of sessions per month** (8 for grades 1–9, 12 for 10–12). If a student joins after the month has started, checkout charges only the remaining scheduled classes on a prorata basis. From the next calendar month the full month is charged. Receipts show `Subject · Month · N classes`.
+
+For local Stripe webhooks:
 
 ```bash
 stripe listen --forward-to localhost:5173/api/payments/webhook

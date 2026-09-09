@@ -72,6 +72,19 @@ export type StudentSubject = {
   created_at: string
 }
 
+export type TuitionPlanRow = {
+  id: number
+  region: 'India' | 'GCC'
+  currency: 'INR' | 'USD'
+  grade_number: number
+  grade_label: string
+  sessions_min: number
+  sessions_max: number
+  monthly_rate: number
+  created_at: string
+  updated_at: string
+}
+
 export type AdmissionStatus = 'unpaid' | 'paid'
 
 export type Admission = {
@@ -82,6 +95,8 @@ export type Admission = {
   status: AdmissionStatus
   subjects: string[]
   subject_months: Record<string, number>
+  subject_sessions: Record<string, number>
+  subject_covered_through: Record<string, string>
   created_at: string
   paid_at: string | null
 }
@@ -102,6 +117,16 @@ export type TuitionPayment = {
   provider_session_id: string | null
   provider_payment_id: string | null
   receipt_url: string | null
+  coverage: Array<{
+    subject: string
+    monthlyRate: number
+    month: string
+    monthLabel: string
+    classesPaid: number
+    classesInMonth: number
+    amount: number
+    amountCents: number
+  }>
   created_at: string
   paid_at: string | null
 }
@@ -708,6 +733,26 @@ export type Database = {
         }
         Relationships: []
       }
+      tuition_plans: {
+        Row: TuitionPlanRow
+        Insert: {
+          region: TuitionPlanRow['region']
+          currency: TuitionPlanRow['currency']
+          grade_number: number
+          grade_label: string
+          sessions_min: number
+          sessions_max: number
+          monthly_rate: number
+        }
+        Update: {
+          currency?: TuitionPlanRow['currency']
+          grade_label?: string
+          sessions_min?: number
+          sessions_max?: number
+          monthly_rate?: number
+        }
+        Relationships: []
+      }
       tuition_payments: {
         Row: TuitionPayment
         Insert: {
@@ -718,6 +763,7 @@ export type Database = {
           amount: number
           currency: string
           subjects?: string[]
+          coverage?: TuitionPayment['coverage']
           renewal?: boolean
           provider_session_id?: string | null
           provider_payment_id?: string | null
@@ -729,6 +775,7 @@ export type Database = {
           provider_session_id?: string | null
           provider_payment_id?: string | null
           receipt_url?: string | null
+          coverage?: TuitionPayment['coverage']
           paid_at?: string | null
         }
         Relationships: []
@@ -742,6 +789,8 @@ export type Database = {
           status?: AdmissionStatus
           subjects?: string[]
           subject_months?: Record<string, number>
+          subject_sessions?: Record<string, number>
+          subject_covered_through?: Record<string, string>
           paid_at?: string | null
         }
         Update: {
@@ -749,6 +798,8 @@ export type Database = {
           status?: AdmissionStatus
           subjects?: string[]
           subject_months?: Record<string, number>
+          subject_sessions?: Record<string, number>
+          subject_covered_through?: Record<string, string>
           paid_at?: string | null
         }
         Relationships: []

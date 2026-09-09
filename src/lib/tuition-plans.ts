@@ -1,13 +1,21 @@
-import { getTuitionConfig } from '@/lib/region'
+import { getRegion, getTuitionConfig } from '@/lib/region'
+import type { TuitionPlan } from '@/lib/regions/types'
+import { isSupabaseConfigured, getSupabase } from '@/lib/supabase'
+import {
+  filterPlansForBoard,
+  monthlyRateFromPlans,
+  sessionsFromPlans,
+} from '@/lib/tuition-plan-lookup'
 
 const tuition = getTuitionConfig()
 
 export const batchSizeLabel = tuition.batchSizeLabel
 export const pricingBoards = tuition.pricingBoards
-export const tuitionPlans = tuition.tuitionPlans
 export const pricingReady = tuition.pricingReady
 export const minEnrolmentGrade = tuition.minEnrolmentGrade
 export const maxEnrolmentGrade = tuition.maxEnrolmentGrade
+
+let catalogPlans: TuitionPlan[] | null = null
 
 export type ClassTimingSlot = {
   start: string
@@ -29,7 +37,11 @@ export function classTimingIndex(startTime: string, endTime: string) {
 }
 
 export type PricingBoardId = (typeof pricingBoards)[number]['id']
-export type TuitionPlanGrade = (typeof tuitionPlans)[number]['grade']
+export type TuitionPlanGrade = TuitionPlan['grade']
+
+export function listTuitionPlans() {
+  return catalogPlans ?? getTuitionConfig().tuitionPlans
+}
 
 export function batchLabelForBoard(boardId: PricingBoardId) {
   const board = pricingBoards.find((item) => item.id === boardId)
@@ -37,22 +49,26 @@ export function batchLabelForBoard(boardId: PricingBoardId) {
 }
 
 export function plansForBoard(boardId: PricingBoardId) {
-  return tuition.plansForBoard(boardId)
+  return filterPlansForBoard(listTuitionPlans(), boardId)
 }
 
 export function formatPrice(amount: number) {
-  return tuition.formatPrice(amount)
+  return getTuitionConfig().formatPrice(amount)
 }
 
 /** Formats monthly rate — INR or USD depending on region. */
 export const formatInr = formatPrice
 
 export function monthlyRateForGrade(grade: string | null | undefined) {
-  return tuition.monthlyRateForGrade(grade)
+  const fallback = getTuitionConfig().monthlyRateForGrade(grade)
+  if (!catalogPlans) return fallback
+  return monthlyRateFromPlans(catalogPlans, grade, fallback)
 }
 
 export function sessionsPerMonthForGrade(grade: string | null | undefined) {
-  return tuition.sessionsPerMonthForGrade(grade)
+  const fallback = getTuitionConfig().sessionsPerMonthForGrade(grade)
+  if (!catalogPlans) return fallback
+  return sessionsFromPlans(catalogPlans, grade, fallback)
 }
 
 export function formatSessionsLabel(plan: { sessionsMin: number; sessionsMax: number }) {
@@ -71,5 +87,28 @@ export function parseGradeLabel(grade: string): { number: string; suffix: string
     number: match[1],
     suffix: match[2],
     rest: match[3] ?? '',
+  }
+}
+
+export async function loadTuitionPlans() {
+  if (catalogPlans) return catalogPlans
+  if (!isSupabaseConfigured()) return listTuitionPlans()
+
+  try {
+    const { data, error } = await getSupabase()
+      .from('tuition_plans')
+      .select('grade_label, sessions_min, sessions_max, monthly_rate')
+      .eq('region', getRegion())
+      .order('grade_number')
+    if (error || !data?.length) return listTuitionPlans()
+    catalogPlans = data.map((row) => ({
+      grade: row.grade_label,
+      sessionsMin: row.sessions_min,
+      sessionsMax: row.sessions_max,
+      rate: Number(row.monthly_rate),
+    }))
+    return catalogPlans
+  } catch {
+    return listTuitionPlans()
   }
 }

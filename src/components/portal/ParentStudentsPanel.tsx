@@ -66,6 +66,7 @@ import type { Admission, AssessmentRequest, Student, StudentSubject } from '@/li
 import { confirmTuitionCheckout } from '@/lib/payment-api'
 import type { TuitionPaymentReceipt } from '@/lib/payments'
 import { formatInr } from '@/lib/tuition-plans'
+import { coveredThroughFromAdmission, monthLabelFromKey } from '@/lib/class-billing'
 
 export type ParentStudentsPanelHandle = {
   openEnrolPanel: () => void
@@ -803,6 +804,7 @@ function StudentCard({
 
                 if (row.secured) {
                   const paidMonths = paidMonthsForSubject(admission, row.subject)
+                  const paidThrough = coveredThroughFromAdmission(admission)[row.subject]
                   return (
                     <div
                       key={row.key}
@@ -812,8 +814,10 @@ function StudentCard({
                         <div className="min-w-0">
                           <span className="text-sm font-semibold text-charcoal">{row.subject}</span>
                           <p className="mt-0.5 text-xs font-medium text-charcoal/45">
-                            {formatInr(row.monthly_rate)} / month · {paidMonths}{' '}
-                            {paidMonths === 1 ? 'month' : 'months'} paid
+                            {formatInr(row.monthly_rate)} / month
+                            {paidThrough
+                              ? ` · paid through ${monthLabelFromKey(paidThrough)}`
+                              : ` · ${paidMonths} ${paidMonths === 1 ? 'month' : 'months'} paid`}
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -924,10 +928,14 @@ function StudentCard({
               <div className="mt-3 space-y-2 border-t border-charcoal/[0.08] pt-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-charcoal/40">
-                    Selected for payment
+                    Selected monthly rate
                   </p>
                   <p className="text-sm font-extrabold text-charcoal">{formatInr(selectedTotal)}</p>
                 </div>
+                <p className="text-[11px] leading-snug text-charcoal/45">
+                  If you join after the month has started, checkout charges only the remaining classes.
+                  The next month is the full batch.
+                </p>
                 <button
                   type="button"
                   disabled={selectedCheckoutSubjects.length === 0}

@@ -2,6 +2,13 @@ import { getSupabase } from '@/lib/supabase'
 import { buildAssessmentPdf } from '@/lib/assessment-pdf'
 import { syncStudentSessions } from '@/lib/sessions'
 import { monthlyRateForGrade } from '@/lib/tuition-plans'
+import {
+  addSubjectSessions,
+  coveredThroughFromAdmission,
+  nextCoveredThrough,
+  sessionCreditsFromAdmission,
+} from '@/lib/class-billing'
+import { quoteStudentClassBilling } from '@/lib/class-billing-schedule'
 import type {
   Admission,
   AssessmentRequest,
@@ -397,6 +404,7 @@ export async function payAndSecureAdmission(input: {
   parentId: string
   amount: number
   subjects: string[]
+  coverage?: import('@/lib/class-billing').ClassBillingLine[]
 }) {
   const { data: existingRow } = await getSupabase()
     .from('admissions')
@@ -405,14 +413,25 @@ export async function payAndSecureAdmission(input: {
     .maybeSingle()
 
   const existing = (existingRow ?? null) as Admission | null
+  const { data: studentRow } = await getSupabase()
+    .from('students')
+    .select('grade')
+    .eq('id', input.studentId)
+    .maybeSingle()
   const mergedSubjects = [...new Set([...(existing?.subjects ?? []), ...input.subjects])]
   const mergedAmount = (existing?.amount ?? 0) + input.amount
+  const coverage = input.coverage ?? []
   const subjectMonths = incrementSubjectMonths(existing?.subject_months, input.subjects)
   const paid = {
     amount: mergedAmount,
     status: 'paid' as const,
     subjects: mergedSubjects,
     subject_months: subjectMonths,
+    subject_sessions: addSubjectSessions(
+      sessionCreditsFromAdmission(existing, studentRow?.grade),
+      coverage,
+    ),
+    subject_covered_through: nextCoveredThrough(coveredThroughFromAdmission(existing), coverage),
     paid_at: new Date().toISOString(),
   }
 
@@ -448,11 +467,30 @@ export async function secureAdmissionForSubject(input: {
   subject: string
   monthlyRate: number
 }) {
+  const { data: student } = await getSupabase()
+    .from('students')
+    .select('id, grade, board')
+    .eq('id', input.studentId)
+    .maybeSingle()
+  const { data: admission } = await getSupabase()
+    .from('admissions')
+    .select('*')
+    .eq('student_id', input.studentId)
+    .maybeSingle()
+  const coverage = await quoteStudentClassBilling({
+    studentId: input.studentId,
+    grade: student?.grade,
+    board: student?.board,
+    coveredThrough: coveredThroughFromAdmission(admission),
+    subjects: [{ subject: input.subject, monthly_rate: input.monthlyRate }],
+  })
+  const amount = coverage.reduce((sum, line) => sum + line.amount, 0)
   return payAndSecureAdmission({
     studentId: input.studentId,
     parentId: input.parentId,
-    amount: input.monthlyRate,
+    amount,
     subjects: [input.subject],
+    coverage,
   })
 }
 

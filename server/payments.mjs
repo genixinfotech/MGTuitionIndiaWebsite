@@ -1,6 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { normalizeRegion } from './regions.mjs'
+import {
+  addSubjectSessions,
+  coveredThroughFromAdmission,
+  coverageTotalCents,
+  defaultDaysOfWeekForSessionCount,
+  formatClassCoverage,
+  nextCoveredThrough,
+  quoteSubjectBilling,
+  sessionCreditsFromAdmission,
+  sessionsPerMonthFromGrade,
+} from './class-billing.mjs'
 
 const MAX_BODY_BYTES = 200_000
 
@@ -24,10 +35,45 @@ function stripeSecret(env) {
   return readEnv(env, 'STRIPE_SECRET_KEY')
 }
 
+function regionForEnv(env) {
+  return normalizeRegion(readEnv(env, 'Region') || readEnv(env, 'VITE_REGION'))
+}
+
 function paymentProviderForEnv(env) {
-  const region = normalizeRegion(readEnv(env, 'Region') || readEnv(env, 'VITE_REGION'))
-  if (region === 'GCC') return 'stripe'
-  return 'manual'
+  return regionForEnv(env) === 'GCC' ? 'stripe' : 'manual'
+}
+
+function gradeNumberFromLabel(grade) {
+  return Number(String(grade || '').match(/\d+/)?.[0] || 0)
+}
+
+async function catalogPlan(admin, region, grade) {
+  const gradeNumber = gradeNumberFromLabel(grade)
+  if (!gradeNumber) return null
+  const { data, error } = await admin
+    .from('tuition_plans')
+    .select('monthly_rate, sessions_min, currency')
+    .eq('region', region)
+    .eq('grade_number', gradeNumber)
+    .maybeSingle()
+  if (error) return null
+  return data
+}
+
+async function monthlyRateForQuotedSubject(admin, student, subject, region, requestedRate) {
+  const { data: assigned } = await admin
+    .from('student_subjects')
+    .select('monthly_rate')
+    .eq('student_id', student.id)
+    .eq('subject', subject)
+    .maybeSingle()
+  if (assigned?.monthly_rate) return Number(assigned.monthly_rate)
+
+  const plan = await catalogPlan(admin, region, student.grade)
+  if (plan?.monthly_rate != null) return Number(plan.monthly_rate)
+
+  const requested = Number(requestedRate)
+  return Number.isFinite(requested) && requested > 0 ? requested : 0
 }
 
 export function paymentPublicConfig(env) {
@@ -127,6 +173,72 @@ async function authenticateParent(req, env) {
   return user
 }
 
+async function daysOfWeekForSubject(admin, student, subject) {
+  const { data: assigned } = await admin
+    .from('batch_students')
+    .select('batch:batches ( subject, days_of_week )')
+    .eq('student_id', student.id)
+  const assignedMatch = (assigned ?? [])
+    .map((row) => row.batch)
+    .find((batch) => batch && String(batch.subject) === subject && Array.isArray(batch.days_of_week) && batch.days_of_week.length > 0)
+  if (assignedMatch) return assignedMatch.days_of_week
+
+  let query = admin.from('batches').select('days_of_week').eq('subject', subject).limit(8)
+  if (student.grade) query = query.eq('grade', student.grade)
+  if (student.board) query = query.eq('syllabus', student.board)
+  const { data: candidates } = await query
+  const match = (candidates ?? []).find((row) => Array.isArray(row.days_of_week) && row.days_of_week.length > 0)
+  if (match) return match.days_of_week
+
+  return defaultDaysOfWeekForSessionCount(sessionsPerMonthFromGrade(student.grade))
+}
+
+function coverageLines(value) {
+  return Array.isArray(value)
+    ? value.filter((row) => row && row.subject && Number.isFinite(Number(row.classesPaid)))
+    : []
+}
+
+async function loadAdmissionBilling(admin, studentId) {
+  const withCoverage = await admin
+    .from('admissions')
+    .select('id, amount, status, subjects, subject_months, subject_sessions, subject_covered_through, paid_at, parent_id, student_id')
+    .eq('student_id', studentId)
+    .maybeSingle()
+  if (!withCoverage.error) return withCoverage.data
+  const legacy = await admin.from('admissions').select('*').eq('student_id', studentId).maybeSingle()
+  if (legacy.error) throw new Error(legacy.error.message || 'Unable to load admission.')
+  return legacy.data
+}
+
+async function quoteStudentSubjects(admin, student, subjects, region) {
+  const admission = await loadAdmissionBilling(admin, student.id)
+  const covered = coveredThroughFromAdmission(admission)
+  const plan = await catalogPlan(admin, region, student.grade)
+  const sessionsPerMonth = Number(plan?.sessions_min) || sessionsPerMonthFromGrade(student.grade)
+  const lines = []
+  for (const row of subjects) {
+    const daysOfWeek = await daysOfWeekForSubject(admin, student, row.subject)
+    const monthlyRate = await monthlyRateForQuotedSubject(
+      admin,
+      student,
+      row.subject,
+      region,
+      row.monthly_rate,
+    )
+    lines.push(
+      quoteSubjectBilling({
+        subject: row.subject,
+        monthlyRate,
+        daysOfWeek,
+        sessionsPerMonth,
+        coveredThrough: covered[row.subject] || null,
+      }),
+    )
+  }
+  return lines
+}
+
 function incrementSubjectMonths(existing, subjects) {
   const next = { ...(existing ?? {}) }
   for (const subject of subjects) {
@@ -135,6 +247,11 @@ function incrementSubjectMonths(existing, subjects) {
     next[trimmed] = (next[trimmed] ?? 0) + 1
   }
   return next
+}
+
+function missingSchemaColumn(error) {
+  const message = String(error?.message || error?.details || '')
+  return error?.code === 'PGRST204' || /subject_sessions|subject_covered_through|coverage/i.test(message)
 }
 
 async function applyPaidAdmission(admin, payment) {
@@ -147,6 +264,12 @@ async function applyPaidAdmission(admin, payment) {
   if (loadError) throw new Error(loadError.message || 'Unable to load admission.')
 
   const existing = existingRow ?? null
+  const coverage = coverageLines(payment.coverage)
+  const { data: studentRow } = await admin
+    .from('students')
+    .select('grade')
+    .eq('id', payment.student_id)
+    .maybeSingle()
   const mergedSubjects = [...new Set([...(existing?.subjects ?? []), ...subjects])]
   const mergedAmount = (existing?.amount ?? 0) + payment.amount
   const paid = {
@@ -154,21 +277,31 @@ async function applyPaidAdmission(admin, payment) {
     status: 'paid',
     subjects: mergedSubjects,
     subject_months: incrementSubjectMonths(existing?.subject_months, subjects),
+    subject_sessions: addSubjectSessions(
+      sessionCreditsFromAdmission(existing, studentRow?.grade),
+      coverage,
+    ),
+    subject_covered_through: nextCoveredThrough(coveredThroughFromAdmission(existing), coverage),
     paid_at: new Date().toISOString(),
+  }
+  const legacyPaid = {
+    amount: paid.amount,
+    status: paid.status,
+    subjects: paid.subjects,
+    subject_months: paid.subject_months,
+    paid_at: paid.paid_at,
   }
 
   if (existing?.id) {
-    const { data, error } = await admin
-      .from('admissions')
-      .update(paid)
-      .eq('id', existing.id)
-      .select('*')
-      .single()
-    if (error) throw new Error(error.message || 'Unable to complete admission.')
-    return data
+    let result = await admin.from('admissions').update(paid).eq('id', existing.id).select('*').single()
+    if (result.error && missingSchemaColumn(result.error)) {
+      result = await admin.from('admissions').update(legacyPaid).eq('id', existing.id).select('*').single()
+    }
+    if (result.error) throw new Error(result.error.message || 'Unable to complete admission.')
+    return result.data
   }
 
-  const { data, error } = await admin
+  let result = await admin
     .from('admissions')
     .insert({
       student_id: payment.student_id,
@@ -177,8 +310,19 @@ async function applyPaidAdmission(admin, payment) {
     })
     .select('*')
     .single()
-  if (error) throw new Error(error.message || 'Unable to complete admission.')
-  return data
+  if (result.error && missingSchemaColumn(result.error)) {
+    result = await admin
+      .from('admissions')
+      .insert({
+        student_id: payment.student_id,
+        parent_id: payment.parent_id,
+        ...legacyPaid,
+      })
+      .select('*')
+      .single()
+  }
+  if (result.error) throw new Error(result.error.message || 'Unable to complete admission.')
+  return result.data
 }
 
 function stripeCharge(session) {
@@ -218,7 +362,7 @@ function stripePaymentExtras(session) {
 async function buildPaymentReceipt(admin, payment, session, parentEmail) {
   const { data: student } = await admin
     .from('students')
-    .select('full_name')
+    .select('full_name, grade')
     .eq('id', payment.student_id)
     .maybeSingle()
   const charge = stripeCharge(session)
@@ -231,8 +375,10 @@ async function buildPaymentReceipt(admin, payment, session, parentEmail) {
     amount: Number.isFinite(amountTotal) && amountTotal > 0 ? amountTotal / 100 : payment.amount,
     currency: String(session?.currency || payment.currency || 'usd').toUpperCase(),
     studentName: student?.full_name || 'Student',
+    studentGrade: student?.grade || null,
     parentEmail: parentEmail || null,
     subjects: Array.isArray(payment.subjects) ? payment.subjects : [],
+    coverage: coverageLines(payment.coverage),
     renewal: Boolean(payment.renewal),
     provider: payment.provider,
   }
@@ -320,7 +466,7 @@ async function createCheckout(req, res, env) {
   const admin = adminClient(env)
   const { data: student, error: studentError } = await admin
     .from('students')
-    .select('id, parent_id, full_name')
+    .select('id, parent_id, full_name, grade, board')
     .eq('id', studentId)
     .maybeSingle()
   if (studentError || !student || student.parent_id !== user.id) {
@@ -328,7 +474,13 @@ async function createCheckout(req, res, env) {
     return
   }
 
-  const amount = subjects.reduce((sum, row) => sum + row.monthly_rate, 0)
+  const coverage = await quoteStudentSubjects(admin, student, subjects, regionForEnv(env))
+  const amountCents = coverageTotalCents(coverage)
+  if (amountCents < 1) {
+    json(res, 400, { error: 'There are no remaining classes to pay for yet.' })
+    return
+  }
+  const amount = amountCents / 100
   const stripe = stripeClient(env)
   const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`
   const subjectNames = subjects.map((row) => row.subject)
@@ -343,6 +495,7 @@ async function createCheckout(req, res, env) {
       amount,
       currency: 'USD',
       subjects: subjectNames,
+      coverage,
       renewal,
     })
     .select('*')
@@ -357,14 +510,14 @@ async function createCheckout(req, res, env) {
     customer_email: user.email || undefined,
     success_url: `${origin}/portal/students?payment=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/portal/students?payment=cancelled`,
-    line_items: subjects.map((row) => ({
+    line_items: coverage.map((line) => ({
       quantity: 1,
       price_data: {
         currency: 'usd',
-        unit_amount: Math.round(row.monthly_rate * 100),
+        unit_amount: line.amountCents,
         product_data: {
-          name: `${row.subject} tuition${renewal ? ' — next month' : ' — first month'}`,
-          description: `MG Tuition GCC · ${student.full_name}`,
+          name: formatClassCoverage(line),
+          description: `MG Tuition GCC · ${student.full_name} · ${line.classesPaid} of ${line.classesInMonth} classes`,
         },
       },
     })),
@@ -386,6 +539,43 @@ async function createCheckout(req, res, env) {
   }
 
   json(res, 200, { url: session.url })
+}
+
+async function quoteCheckout(req, res, env) {
+  const user = await authenticateParent(req, env)
+  const body = await readJson(req)
+  const studentId = Number(body.studentId)
+  const subjects = Array.isArray(body.subjects)
+    ? body.subjects
+        .map((row) => ({
+          subject: String(row?.subject || '').trim(),
+          monthly_rate: Number(row?.monthly_rate),
+        }))
+        .filter((row) => row.subject && Number.isFinite(row.monthly_rate) && row.monthly_rate > 0)
+    : []
+
+  if (!studentId || subjects.length === 0) {
+    json(res, 400, { error: 'Select at least one subject to pay.' })
+    return
+  }
+
+  const admin = adminClient(env)
+  const { data: student, error: studentError } = await admin
+    .from('students')
+    .select('id, parent_id, full_name, grade, board')
+    .eq('id', studentId)
+    .maybeSingle()
+  if (studentError || !student || student.parent_id !== user.id) {
+    json(res, 403, { error: 'You can only pay for your own children.' })
+    return
+  }
+
+  const coverage = await quoteStudentSubjects(admin, student, subjects, regionForEnv(env))
+  json(res, 200, {
+    coverage,
+    amount: coverageTotalCents(coverage) / 100,
+    currency: 'USD',
+  })
 }
 
 async function confirmCheckout(req, res, env) {
@@ -447,6 +637,10 @@ export function createPaymentsMiddleware(env) {
     try {
       if ((path === '/' || path === '/config') && req.method === 'GET') {
         json(res, 200, { ok: true, ...paymentPublicConfig(env) })
+        return
+      }
+      if (path === '/quote' && req.method === 'POST') {
+        await quoteCheckout(req, res, env)
         return
       }
       if (path === '/checkout' && req.method === 'POST') {

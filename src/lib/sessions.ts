@@ -1,4 +1,5 @@
 import { paidMonthsForSubject, isAdmissionPaidForSubject } from '@/lib/assessments'
+import { sessionCreditsFromAdmission } from '@/lib/class-billing'
 import type { Batch } from '@/lib/batches'
 import type { Admission, Session, SessionStatus } from '@/lib/database.types'
 import { getSupabase } from '@/lib/supabase'
@@ -36,47 +37,55 @@ function dateKey(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-export function buildSessionDateSlots(batch: Batch, maxSessions: number): SessionDateSlot[] {
-  if (maxSessions <= 0) return []
-
-  const batchStart = new Date(`${batch.start_date}T00:00:00`)
-  if (Number.isNaN(batchStart.getTime())) return []
-
-  const windowEnd = new Date(batchStart)
-  windowEnd.setDate(windowEnd.getDate() + GENERATION_WEEK_CAP * 7)
-  windowEnd.setHours(23, 59, 59, 999)
-
-  const daySet = new Set(batch.days_of_week)
-  const slots: SessionDateSlot[] = []
-
-  for (let cursor = new Date(batchStart); cursor <= windowEnd; cursor.setDate(cursor.getDate() + 1)) {
-    if (!daySet.has(cursor.getDay())) continue
-
-    const sessionDate = dateKey(cursor)
-    if (new Date(`${sessionDate}T00:00:00`) < batchStart) continue
-
-    const start = parseClassTime(batch.start_time, sessionDate)
-    const end = parseClassTime(batch.end_time, sessionDate)
-
-    slots.push({
-      sessionDate,
-      startsAt: start.toISOString(),
-      endsAt: end.toISOString(),
-    })
-
-    if (slots.length >= maxSessions) break
-  }
-
-  return slots
-}
-
 export function paidSessionLimitForStudent(
   admission: Admission | null,
   subject: string,
   grade: string | null | undefined,
 ) {
   if (!isAdmissionPaidForSubject(admission, subject)) return 0
+  const credits = sessionCreditsFromAdmission(admission, grade)[subject]
+  if (typeof credits === 'number' && credits > 0) return credits
   return paidMonthsForSubject(admission, subject) * sessionsPerMonthForGrade(grade)
+}
+
+export function buildSessionDateSlots(
+  batch: Batch,
+  maxSessions: number,
+  fromDate = new Date(),
+): SessionDateSlot[] {
+  if (maxSessions <= 0) return []
+
+  const batchStart = new Date(`${batch.start_date}T00:00:00`)
+  if (Number.isNaN(batchStart.getTime())) return []
+
+  const floor = new Date(fromDate)
+  floor.setHours(0, 0, 0, 0)
+  const start = batchStart > floor ? batchStart : floor
+
+  const windowEnd = new Date(start)
+  windowEnd.setDate(windowEnd.getDate() + GENERATION_WEEK_CAP * 7)
+  windowEnd.setHours(23, 59, 59, 999)
+
+  const daySet = new Set(batch.days_of_week)
+  const slots: SessionDateSlot[] = []
+
+  for (let cursor = new Date(start); cursor <= windowEnd; cursor.setDate(cursor.getDate() + 1)) {
+    if (!daySet.has(cursor.getDay())) continue
+
+    const sessionDate = dateKey(cursor)
+    const startAt = parseClassTime(batch.start_time, sessionDate)
+    const endAt = parseClassTime(batch.end_time, sessionDate)
+
+    slots.push({
+      sessionDate,
+      startsAt: startAt.toISOString(),
+      endsAt: endAt.toISOString(),
+    })
+
+    if (slots.length >= maxSessions) break
+  }
+
+  return slots
 }
 
 export async function refreshSessionStatuses() {
@@ -97,7 +106,17 @@ export async function ensureStudentBatchSessions(input: {
   )
   if (limit <= 0) return []
 
-  const slots = buildSessionDateSlots(input.batch, limit)
+  const { count, error: countError } = await getSupabase()
+    .from('sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('batch_id', input.batch.id)
+    .eq('student_id', input.studentId)
+  if (countError) throw new Error(countError.message || 'Unable to count class sessions.')
+
+  const remaining = limit - (count ?? 0)
+  if (remaining <= 0) return []
+
+  const slots = buildSessionDateSlots(input.batch, remaining, new Date())
   if (slots.length === 0) return []
 
   const rows = slots.map((slot) => ({

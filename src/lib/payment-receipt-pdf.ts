@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import { site } from '@/lib/site'
+import { receiptCoverageText } from '@/lib/class-billing'
 import { formatReceiptAmount, formatReceiptDate, type TuitionPaymentReceipt } from '@/lib/payments'
 
 const CRIMSON: [number, number, number] = [204, 0, 0]
@@ -29,8 +30,16 @@ export function buildPaymentReceiptPdf(receipt: TuitionPaymentReceipt) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const amount = formatReceiptAmount(receipt.amount, receipt.currency)
   const paidAt = formatReceiptDate(receipt.paidAt)
-  const subjects = receipt.subjects.length > 0 ? receipt.subjects.join(', ') : 'Tuition fee'
-  const period = receipt.renewal ? 'Next month tuition' : 'First month tuition'
+  const coverageLabel = receiptCoverageText({
+    coverage: receipt.coverage,
+    subjects: receipt.subjects,
+    paidAt: receipt.paidAt,
+    grade: receipt.studentGrade,
+  })
+  const period =
+    receipt.coverage.length > 0
+      ? receipt.coverage.map((line) => `${line.monthLabel} · ${line.classesPaid} classes`).join(', ')
+      : coverageLabel
 
   doc.setFillColor(...CRIMSON)
   doc.rect(0, 0, pageWidth, 42, 'F')
@@ -67,7 +76,7 @@ export function buildPaymentReceiptPdf(receipt: TuitionPaymentReceipt) {
   y = row(doc, 'Transaction date', paidAt, y, pageWidth)
   y = row(doc, 'Amount paid', amount, y, pageWidth)
   y = row(doc, 'Student', receipt.studentName, y, pageWidth)
-  y = row(doc, 'Subjects', subjects, y, pageWidth)
+  y = row(doc, 'Classes', coverageLabel, y, pageWidth)
   y = row(doc, 'Paid via', receipt.provider === 'stripe' ? 'Stripe' : receipt.provider, y, pageWidth)
   if (receipt.transactionId) {
     y = row(doc, 'Stripe transaction ID', receipt.transactionId, y, pageWidth)

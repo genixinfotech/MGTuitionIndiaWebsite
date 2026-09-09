@@ -12,7 +12,8 @@ import {
 } from 'lucide-react'
 import { formatInr } from '@/lib/tuition-plans'
 import { getPaymentProvider, isCardCheckoutEnabled } from '@/lib/payments'
-import { startTuitionCheckout } from '@/lib/payment-api'
+import { quoteTuitionCheckout, startTuitionCheckout } from '@/lib/payment-api'
+import { formatClassCoverage, monthNameFromKey, type ClassBillingLine } from '@/lib/class-billing'
 import { PaymentNoticeModal } from '@/components/portal/PaymentNoticeModal'
 import { site } from '@/lib/site'
 import {
@@ -137,7 +138,10 @@ export function AdmissionCheckout({
   const [payError, setPayError] = useState('')
   const [provider, setProvider] = useState(getPaymentProvider)
   const [cardReady, setCardReady] = useState(isCardCheckoutEnabled)
-  const amount = subjects.reduce((sum, row) => sum + row.monthly_rate, 0)
+  const [coverage, setCoverage] = useState<ClassBillingLine[]>([])
+  const [quoting, setQuoting] = useState(false)
+  const fallbackAmount = subjects.reduce((sum, row) => sum + row.monthly_rate, 0)
+  const amount = coverage.length > 0 ? coverage.reduce((sum, line) => sum + line.amount, 0) : fallbackAmount
   const subjectNames = useMemo(() => subjects.map((item) => item.subject), [subjects])
   const useStripe = provider === 'stripe'
 
@@ -159,6 +163,32 @@ export function AdmissionCheckout({
       cancelled = true
     }
   }, [student])
+
+  useEffect(() => {
+    if (!student || subjects.length === 0) {
+      setCoverage([])
+      return
+    }
+    let cancelled = false
+    setQuoting(true)
+    void quoteTuitionCheckout({
+      studentId: student.id,
+      subjects,
+      renewal,
+    })
+      .then((quote) => {
+        if (!cancelled) setCoverage(quote.coverage)
+      })
+      .catch(() => {
+        if (!cancelled) setCoverage([])
+      })
+      .finally(() => {
+        if (!cancelled) setQuoting(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [renewal, student, subjects])
 
   useEffect(() => {
     if (!student) return
@@ -267,16 +297,8 @@ export function AdmissionCheckout({
                 </h2>
                 <p className="mt-1 text-sm text-charcoal/50">
                   {useStripe
-                    ? renewal
-                      ? `Pay the next month for ${subjectNames.join(', ')} securely with Stripe.`
-                      : `Pay the first month for ${subjectNames.join(', ')} securely with Stripe.`
-                    : renewal
-                      ? subjectNames.length === 1
-                        ? `Pay the next month for ${subjectNames[0]} by UPI, then send your receipt to your student consultant on WhatsApp.`
-                        : `Pay the next month for ${subjectNames.join(', ')} by UPI, then send your receipt to your student consultant on WhatsApp.`
-                      : subjectNames.length === 1
-                        ? `Pay the first month for ${subjectNames[0]} by UPI, then send your receipt to your student consultant on WhatsApp.`
-                        : `Pay the first month for ${subjectNames.join(', ')} by UPI, then send your receipt to your student consultant on WhatsApp.`}
+                    ? 'Pay only for remaining classes this month if you are joining mid-month. Next month is charged in full.'
+                    : 'Pay the remaining classes for this month by UPI, then send your receipt to your student consultant on WhatsApp.'}
                 </p>
               </div>
               <button
@@ -291,18 +313,38 @@ export function AdmissionCheckout({
 
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
               <div className="space-y-2">
-                {subjects.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3"
-                  >
-                    <p className="text-sm font-semibold text-charcoal">{row.subject}</p>
-                    <p className="text-sm font-bold text-charcoal">{formatInr(row.monthly_rate)}</p>
-                  </div>
-                ))}
+                {subjects.map((row) => {
+                  const line = coverage.find((item) => item.subject === row.subject)
+                  return (
+                    <div
+                      key={row.id}
+                      className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-charcoal">
+                          {line ? formatClassCoverage(line) : row.subject}
+                        </p>
+                        {line ? (
+                          <p className="mt-0.5 text-xs text-charcoal/45">
+                            {line.classesPaid} of {line.classesInMonth} classes in{' '}
+                            {monthNameFromKey(line.month)}
+                            {line.classesPaid < line.classesInMonth ? ' · On Prorata Basis' : ''}
+                          </p>
+                        ) : quoting ? (
+                          <p className="mt-0.5 text-xs text-charcoal/45">Calculating remaining classes…</p>
+                        ) : (
+                          <p className="mt-0.5 text-xs text-charcoal/45">{formatInr(row.monthly_rate)} / month</p>
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-charcoal">
+                        {formatInr(line?.amount ?? row.monthly_rate)}
+                      </p>
+                    </div>
+                  )
+                })}
                 <div className="rounded-2xl border border-crimson/15 bg-crimson/[0.04] px-4 py-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal/40">
-                    {renewal ? 'Next month total' : 'First month total'}
+                    Payable now
                   </p>
                   <p className="mt-1 text-2xl font-extrabold text-charcoal">{formatInr(amount)}</p>
                 </div>

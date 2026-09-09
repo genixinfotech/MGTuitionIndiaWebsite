@@ -7,6 +7,7 @@ import {
   formatReceiptDate,
   type TuitionPaymentReceipt,
 } from '@/lib/payments'
+import { receiptCoverageText } from '@/lib/class-billing'
 import { downloadPaymentReceiptPdf } from '@/lib/payment-receipt-pdf'
 
 export type PaymentNoticeTone = 'success' | 'error' | 'info' | 'loading'
@@ -18,8 +19,13 @@ function ReceiptDetails({ receipt }: { receipt: TuitionPaymentReceipt }) {
     { label: 'Amount paid', value: formatReceiptAmount(receipt.amount, receipt.currency) },
     { label: 'Student', value: receipt.studentName },
     {
-      label: 'Subjects',
-      value: receipt.subjects.length > 0 ? receipt.subjects.join(', ') : 'Tuition fee',
+      label: 'Classes',
+      value: receiptCoverageText({
+        coverage: receipt.coverage,
+        subjects: receipt.subjects,
+        paidAt: receipt.paidAt,
+        grade: receipt.studentGrade,
+      }),
     },
     receipt.transactionId ? { label: 'Stripe transaction ID', value: receipt.transactionId } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>
