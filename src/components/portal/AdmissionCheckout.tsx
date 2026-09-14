@@ -138,6 +138,7 @@ export function AdmissionCheckout({
   const [payError, setPayError] = useState('')
   const [provider, setProvider] = useState(getPaymentProvider)
   const [cardReady, setCardReady] = useState(isCardCheckoutEnabled)
+  const [paymentModel, setPaymentModel] = useState<'one_time' | 'subscription'>('one_time')
   const [coverage, setCoverage] = useState<ClassBillingLine[]>([])
   const [quoting, setQuoting] = useState(false)
   const fallbackAmount = subjects.reduce((sum, row) => sum + row.monthly_rate, 0)
@@ -195,7 +196,7 @@ export function AdmissionCheckout({
     let cancelled = false
     void fetch('/api/payments')
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { paymentProvider?: string; cardCheckoutEnabled?: boolean } | null) => {
+      .then((data: { paymentProvider?: string; cardCheckoutEnabled?: boolean; paymentModel?: string } | null) => {
         if (cancelled || !data) return
         if (
           data.paymentProvider === 'stripe' ||
@@ -211,6 +212,9 @@ export function AdmissionCheckout({
         }
         if (typeof data.cardCheckoutEnabled === 'boolean') {
           setCardReady(data.cardCheckoutEnabled)
+        }
+        if (data.paymentModel === 'subscription' || data.paymentModel === 'one_time') {
+          setPaymentModel(data.paymentModel)
         }
       })
       .catch(() => {
@@ -297,7 +301,9 @@ export function AdmissionCheckout({
                 </h2>
                 <p className="mt-1 text-sm text-charcoal/50">
                   {useStripe
-                    ? 'Pay only for remaining classes this month if you are joining mid-month. Next month is charged in full.'
+                    ? paymentModel === 'subscription'
+                      ? 'Start a monthly Stripe subscription. This month is On Prorata Basis if you join after classes have begun; later months are billed in full automatically.'
+                      : 'Pay only for remaining classes this month if you are joining mid-month. Next month is charged in full.'
                     : 'Pay the remaining classes for this month by UPI, then send your receipt to your student consultant on WhatsApp.'}
                 </p>
               </div>
@@ -357,7 +363,8 @@ export function AdmissionCheckout({
                     Pay with Stripe
                   </div>
                   <p className="mt-1 text-sm text-charcoal/50">
-                    You will be redirected to Stripe Checkout to pay {formatInr(amount)} by card.
+                    You will be redirected to Stripe Checkout to pay {formatInr(amount)} by card
+                    {paymentModel === 'subscription' ? ' and start a monthly subscription' : ''}.
                     Admission is confirmed automatically after a successful payment.
                   </p>
                   {cardReady ? null : (
@@ -374,8 +381,7 @@ export function AdmissionCheckout({
                     Pay by UPI
                   </div>
                   <p className="mt-1 text-sm text-charcoal/50">
-                    Scan the QR code below and pay {formatInr(amount)}. Razorpay checkout will
-                    replace this once sandbox access is ready.
+                    Scan the QR code below and pay {formatInr(amount)}.
                   </p>
                   <div className="mt-4 flex justify-center">
                     <div className="rounded-2xl border border-charcoal/[0.08] bg-white p-3 shadow-sm">
@@ -462,10 +468,6 @@ export function AdmissionCheckout({
                     <UserRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
                     After paying, open WhatsApp and attach your UPI payment screenshot or receipt. Your
                     consultant will confirm admission once payment is verified.
-                  </p>
-                  <p className="mt-2 flex items-start gap-2 text-[11px] leading-snug text-charcoal/45">
-                    <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson" />
-                    Razorpay checkout for India will be added once sandbox access is ready.
                   </p>
                 </>
               )}

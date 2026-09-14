@@ -41,6 +41,7 @@ import { OneViewHrPage } from '@/pages/oneview/OneViewHrPage'
 import { OneViewHrTutorEnquiriesPage } from '@/pages/oneview/OneViewHrTutorEnquiriesPage'
 import { OneViewFinancePage } from '@/pages/oneview/OneViewFinancePage'
 import { OneViewSectionPage } from '@/pages/oneview/OneViewSectionPage'
+import { OneViewSettingsPage } from '@/pages/oneview/OneViewSettingsPage'
 import { OneViewUsersPage } from '@/pages/oneview/OneViewUsersPage'
 import { OneViewOperationsPage } from '@/pages/oneview/OneViewOperationsPage'
 import { OneViewOperationsBatchesPage } from '@/pages/oneview/OneViewOperationsBatchesPage'
@@ -121,7 +122,7 @@ export default function App() {
               <Route path="hr" element={<OneViewHrPage />} />
               <Route path="hr/tutor-enquiries" element={<OneViewHrTutorEnquiriesPage />} />
               <Route path="quality" element={<OneViewSectionPage />} />
-              <Route path="settings" element={<OneViewSectionPage />} />
+              <Route path="settings" element={<OneViewSettingsPage />} />
             </Route>
             <Route path="/dashboard" element={<Navigate to="/oneview/assessments/web" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />

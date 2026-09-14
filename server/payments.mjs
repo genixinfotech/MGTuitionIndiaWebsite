@@ -84,6 +84,45 @@ export function paymentPublicConfig(env) {
   }
 }
 
+export async function paymentRuntimeConfig(env) {
+  return {
+    ...paymentPublicConfig(env),
+    paymentModel: await loadPaymentModel(env),
+  }
+}
+
+async function loadPaymentModel(env) {
+  try {
+    const { data } = await adminClient(env)
+      .from('app_settings')
+      .select('payment_model')
+      .eq('id', 1)
+      .maybeSingle()
+    return data?.payment_model === 'subscription' ? 'subscription' : 'one_time'
+  } catch {
+    return 'one_time'
+  }
+}
+
+function nextMonthStartUnix() {
+  const now = new Date()
+  return Math.floor(new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() / 1000)
+}
+
+function nextMonthLabel() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleString('en-GB', {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function subscriptionIdFrom(session) {
+  const value = session?.subscription
+  if (typeof value === 'string' && value) return value
+  return value?.id || null
+}
+
 function bearerToken(req) {
   const header = req.headers.authorization || req.headers.Authorization || ''
   const match = String(header).match(/^Bearer\s+(.+)$/i)
@@ -325,19 +364,54 @@ async function applyPaidAdmission(admin, payment) {
   return result.data
 }
 
-function stripeCharge(session) {
-  const intent = session?.payment_intent
+function isCheckoutSuccessful(session) {
+  return (
+    session?.status === 'complete' ||
+    session?.payment_status === 'paid' ||
+    session?.payment_status === 'no_payment_required'
+  )
+}
+
+function stripeInvoice(session) {
+  const invoice = session?.invoice
+  return invoice && typeof invoice !== 'string' ? invoice : null
+}
+
+function chargeFromPaymentIntent(intent) {
   if (!intent || typeof intent === 'string') return null
   const charge = intent.latest_charge
   if (!charge || typeof charge === 'string') return null
   return charge
 }
 
+function stripeCharge(session) {
+  return (
+    chargeFromPaymentIntent(session?.payment_intent) ||
+    chargeFromPaymentIntent(stripeInvoice(session)?.payment_intent)
+  )
+}
+
 function paymentIntentId(session, payment) {
-  const intent = session?.payment_intent
+  const intent = session?.payment_intent || stripeInvoice(session)?.payment_intent
   if (typeof intent === 'string' && intent) return intent
   if (intent?.id) return intent.id
-  return payment?.provider_payment_id || null
+  return payment?.provider_payment_id || session?.id || null
+}
+
+function compactExtras(extras) {
+  return Object.fromEntries(
+    Object.entries(extras).filter(([, value]) => value != null && value !== ''),
+  )
+}
+
+async function retrieveCheckoutSession(stripe, sessionId) {
+  try {
+    return await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['invoice.payment_intent.latest_charge', 'subscription'],
+    })
+  } catch {
+    return stripe.checkout.sessions.retrieve(sessionId)
+  }
 }
 
 function receiptNumberFor(payment, _charge) {
@@ -353,10 +427,16 @@ function paidAtIso(payment, session, charge) {
 
 function stripePaymentExtras(session) {
   const charge = stripeCharge(session)
-  return {
+  return compactExtras({
     provider_payment_id: paymentIntentId(session, null),
     receipt_url: charge?.receipt_url || null,
-  }
+    provider_subscription_id: subscriptionIdFrom(session),
+  })
+}
+
+function missingPaymentColumn(error) {
+  const message = String(error?.message || error?.details || '')
+  return error?.code === 'PGRST204' || /provider_subscription_id/i.test(message)
 }
 
 async function buildPaymentReceipt(admin, payment, session, parentEmail) {
@@ -390,53 +470,83 @@ async function loadAdmissionForStudent(admin, studentId) {
 }
 
 async function markPaymentPaid(admin, paymentId, extras = {}) {
-  const { data, error } = await admin
+  const payload = {
+    status: 'paid',
+    paid_at: new Date().toISOString(),
+    ...compactExtras(extras),
+  }
+  let result = await admin
     .from('tuition_payments')
-    .update({
-      status: 'paid',
-      paid_at: new Date().toISOString(),
-      ...extras,
-    })
+    .update(payload)
     .eq('id', paymentId)
     .eq('status', 'pending')
     .select('*')
     .maybeSingle()
-  if (error) throw new Error(error.message || 'Unable to update payment.')
-  return data
+  if (result.error && missingPaymentColumn(result.error)) {
+    const { provider_subscription_id: _ignored, ...withoutSubscription } = payload
+    result = await admin
+      .from('tuition_payments')
+      .update(withoutSubscription)
+      .eq('id', paymentId)
+      .eq('status', 'pending')
+      .select('*')
+      .maybeSingle()
+  }
+  if (result.error) throw new Error(result.error.message || 'Unable to update payment.')
+  return result.data
+}
+
+async function loadPaymentForCheckoutSession(admin, session) {
+  const bySession = await admin
+    .from('tuition_payments')
+    .select('*')
+    .eq('provider', 'stripe')
+    .eq('provider_session_id', session.id)
+    .maybeSingle()
+  if (bySession.error) throw new Error(bySession.error.message || 'Unable to load payment.')
+  if (bySession.data) return bySession.data
+
+  const paymentId = Number(session.metadata?.payment_id)
+  if (!paymentId) throw new Error('Payment record was not found.')
+  const byId = await admin.from('tuition_payments').select('*').eq('id', paymentId).maybeSingle()
+  if (byId.error) throw new Error(byId.error.message || 'Unable to load payment.')
+  if (!byId.data) throw new Error('Payment record was not found.')
+  return byId.data
+}
+
+async function waitForAdmission(admin, studentId) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const admission = await loadAdmissionForStudent(admin, studentId)
+    if (admission) return admission
+    if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 300))
+  }
+  return null
 }
 
 async function fulfillCheckoutSession(env, session) {
   const admin = adminClient(env)
-  const sessionId = session.id
-  const { data: payment, error } = await admin
-    .from('tuition_payments')
-    .select('*')
-    .eq('provider', 'stripe')
-    .eq('provider_session_id', sessionId)
-    .maybeSingle()
-  if (error) throw new Error(error.message || 'Unable to load payment.')
-  if (!payment) throw new Error('Payment record was not found.')
+  const payment = await loadPaymentForCheckoutSession(admin, session)
+
   if (payment.status === 'paid') {
-    return {
-      admission: await loadAdmissionForStudent(admin, payment.student_id),
-      payment,
-    }
+    let admission = await waitForAdmission(admin, payment.student_id)
+    if (!admission) admission = await applyPaidAdmission(admin, payment)
+    return { admission, payment }
   }
 
   const updated = await markPaymentPaid(admin, payment.id, stripePaymentExtras(session))
-  if (!updated) {
-    const { data: latest } = await admin.from('tuition_payments').select('*').eq('id', payment.id).maybeSingle()
-    return {
-      admission: await loadAdmissionForStudent(admin, payment.student_id),
-      payment: latest ?? payment,
-    }
+  if (updated) {
+    const admission = await applyPaidAdmission(admin, {
+      ...updated,
+      subjects: updated.subjects ?? payment.subjects,
+    })
+    return { admission, payment: updated }
   }
 
-  const admission = await applyPaidAdmission(admin, {
-    ...updated,
-    subjects: updated.subjects ?? payment.subjects,
-  })
-  return { admission, payment: updated }
+  const { data: latest } = await admin.from('tuition_payments').select('*').eq('id', payment.id).maybeSingle()
+  const paid = latest ?? payment
+  let admission = await waitForAdmission(admin, payment.student_id)
+  if (!admission) admission = await applyPaidAdmission(admin, paid)
+  return { admission, payment: paid }
 }
 
 async function createCheckout(req, res, env) {
@@ -480,10 +590,13 @@ async function createCheckout(req, res, env) {
     json(res, 400, { error: 'There are no remaining classes to pay for yet.' })
     return
   }
-  const amount = amountCents / 100
+  const amount = Number((amountCents / 100).toFixed(2))
   const stripe = stripeClient(env)
   const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`
   const subjectNames = subjects.map((row) => row.subject)
+  const paymentModel = await loadPaymentModel(env)
+  const useSubscription = paymentModel === 'subscription'
+  const prorataFirstMonth = coverage.some((line) => line.classesPaid < line.classesInMonth)
 
   const { data: payment, error: insertError } = await admin
     .from('tuition_payments')
@@ -505,28 +618,81 @@ async function createCheckout(req, res, env) {
     return
   }
 
+  const metadata = {
+    payment_id: String(payment.id),
+    student_id: String(studentId),
+    parent_id: user.id,
+    subjects: subjectNames.join(','),
+    payment_model: paymentModel,
+  }
+
+  const lineItems = useSubscription
+    ? coverage.flatMap((line) => {
+        const monthlyCents = Math.max(1, Math.round(Number(line.monthlyRate) * 100))
+        const items = [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              recurring: { interval: 'month' },
+              unit_amount: monthlyCents,
+              product_data: {
+                name: `${line.subject} · monthly tuition`,
+                description: `MG Tuition GCC · ${student.full_name} · starts ${nextMonthLabel()}`,
+              },
+            },
+          },
+        ]
+        if (prorataFirstMonth && line.amountCents > 0) {
+          items.push({
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: line.amountCents,
+              product_data: {
+                name: `${line.subject} · Prorata Plan`,
+                description: `On Prorata Basis · ${line.classesPaid} of ${line.classesInMonth} classes in ${line.monthLabel}`,
+              },
+            },
+          })
+        }
+        return items
+      })
+    : coverage.map((line) => ({
+        quantity: 1,
+        price_data: {
+          currency: 'usd',
+          unit_amount: line.amountCents,
+          product_data: {
+            name: formatClassCoverage(line),
+            description: `MG Tuition GCC · ${student.full_name} · ${line.classesPaid} of ${line.classesInMonth} classes`,
+          },
+        },
+      }))
+
   const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
+    mode: useSubscription ? 'subscription' : 'payment',
     customer_email: user.email || undefined,
     success_url: `${origin}/portal/students?payment=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/portal/students?payment=cancelled`,
-    line_items: coverage.map((line) => ({
-      quantity: 1,
-      price_data: {
-        currency: 'usd',
-        unit_amount: line.amountCents,
-        product_data: {
-          name: formatClassCoverage(line),
-          description: `MG Tuition GCC · ${student.full_name} · ${line.classesPaid} of ${line.classesInMonth} classes`,
-        },
-      },
-    })),
-    metadata: {
-      payment_id: String(payment.id),
-      student_id: String(studentId),
-      parent_id: user.id,
-      subjects: subjectNames.join(','),
-    },
+    line_items: lineItems,
+    metadata,
+    ...(useSubscription
+      ? {
+          custom_text: prorataFirstMonth
+            ? {
+                submit: {
+                  message:
+                    'Today you pay the Prorata Plan for remaining classes this month. The monthly subscription starts next month.',
+                },
+              }
+            : undefined,
+          subscription_data: {
+            metadata,
+            ...(prorataFirstMonth ? { trial_end: nextMonthStartUnix() } : {}),
+          },
+        }
+      : {}),
   })
 
   const { error: sessionError } = await admin
@@ -588,21 +754,19 @@ async function confirmCheckout(req, res, env) {
   }
 
   const stripe = stripeClient(env)
-  const session = await stripe.checkout.sessions.retrieve(sessionId, {
-    expand: ['payment_intent.latest_charge'],
-  })
+  const session = await retrieveCheckoutSession(stripe, sessionId)
   if (session.metadata?.parent_id && session.metadata.parent_id !== user.id) {
     json(res, 403, { error: 'This payment does not belong to your account.' })
     return
   }
-  if (session.payment_status !== 'paid' && session.status !== 'complete') {
+  if (!isCheckoutSuccessful(session)) {
     json(res, 409, { error: 'This payment is not complete yet.' })
     return
   }
 
   const { admission, payment } = await fulfillCheckoutSession(env, session)
   if (!admission || !payment) {
-    json(res, 500, { error: 'Unable to confirm this payment.' })
+    json(res, 500, { error: 'Payment was received, but admission could not be updated. Please contact us.' })
     return
   }
   const receipt = await buildPaymentReceipt(adminClient(env), payment, session, user.email)
@@ -622,11 +786,84 @@ async function handleWebhook(req, res, env) {
   const event = stripe.webhooks.constructEvent(raw, signature, webhookSecret)
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
-    if (session.payment_status === 'paid' || session.status === 'complete') {
+    if (
+      session.payment_status === 'paid' ||
+      session.payment_status === 'no_payment_required' ||
+      session.status === 'complete'
+    ) {
       await fulfillCheckoutSession(env, session)
     }
   }
+  if (event.type === 'invoice.paid') {
+    await fulfillSubscriptionInvoice(env, event.data.object)
+  }
   json(res, 200, { received: true })
+}
+
+async function fulfillSubscriptionInvoice(env, invoice) {
+  if (invoice?.billing_reason !== 'subscription_cycle') return
+  const subscriptionId =
+    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id
+  if (!subscriptionId) return
+
+  const stripe = stripeClient(env)
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const studentId = Number(subscription.metadata?.student_id)
+  const parentId = String(subscription.metadata?.parent_id || '')
+  const subjectNames = String(subscription.metadata?.subjects || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+  if (!studentId || !parentId || subjectNames.length === 0) return
+
+  const admin = adminClient(env)
+  const { data: existing } = await admin
+    .from('tuition_payments')
+    .select('id')
+    .eq('provider', 'stripe')
+    .eq('provider_payment_id', invoice.id)
+    .maybeSingle()
+  if (existing) return
+
+  const { data: student } = await admin
+    .from('students')
+    .select('id, parent_id, full_name, grade, board')
+    .eq('id', studentId)
+    .maybeSingle()
+  if (!student || student.parent_id !== parentId) return
+
+  const { data: assigned } = await admin
+    .from('student_subjects')
+    .select('subject, monthly_rate')
+    .eq('student_id', studentId)
+    .in('subject', subjectNames)
+  const subjects = subjectNames.map((subject) => {
+    const row = (assigned ?? []).find((item) => item.subject === subject)
+    return { subject, monthly_rate: Number(row?.monthly_rate) || 1 }
+  })
+
+  const coverage = await quoteStudentSubjects(admin, student, subjects, regionForEnv(env))
+  const amount = Number((coverageTotalCents(coverage) / 100).toFixed(2))
+  const { data: payment, error } = await admin
+    .from('tuition_payments')
+    .insert({
+      student_id: studentId,
+      parent_id: parentId,
+      provider: 'stripe',
+      status: 'paid',
+      amount,
+      currency: 'USD',
+      subjects: subjectNames,
+      coverage,
+      renewal: true,
+      provider_payment_id: invoice.id,
+      provider_subscription_id: subscriptionId,
+      paid_at: new Date().toISOString(),
+    })
+    .select('*')
+    .single()
+  if (error || !payment) throw new Error(error?.message || 'Unable to record subscription payment.')
+  await applyPaidAdmission(admin, payment)
 }
 
 export function createPaymentsMiddleware(env) {
@@ -636,7 +873,7 @@ export function createPaymentsMiddleware(env) {
 
     try {
       if ((path === '/' || path === '/config') && req.method === 'GET') {
-        json(res, 200, { ok: true, ...paymentPublicConfig(env) })
+        json(res, 200, { ok: true, ...(await paymentRuntimeConfig(env)) })
         return
       }
       if (path === '/quote' && req.method === 'POST') {

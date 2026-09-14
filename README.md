@@ -31,7 +31,7 @@ Region-specific copy, pricing, offices, and location dropdowns live in `src/lib/
 | Region | Gateway | Status |
 |--------|---------|--------|
 | GCC | Stripe Checkout | Live in sandbox when `STRIPE_SECRET_KEY` is set |
-| India | UPI + consultant confirmation | Razorpay will replace this after sandbox access |
+| India | UPI + consultant confirmation | Live |
 
 Add these **server-only** variables (never prefix with `VITE_`):
 
@@ -40,7 +40,7 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-Apply `supabase/migrations/20260908130000_tuition_payments.sql`, `supabase/migrations/20260908140000_payment_coverage.sql`, and `supabase/migrations/20260909125351_tuition_plans.sql` in the Supabase SQL editor for **each** region project. `tuition_plans` stores India rates in INR and GCC rates in USD; the app loads the rows that match `Region`.
+Apply `supabase/migrations/20260908130000_tuition_payments.sql`, `supabase/migrations/20260908140000_payment_coverage.sql`, `supabase/migrations/20260909125351_tuition_plans.sql`, `supabase/migrations/20260909131019_payment_amounts_numeric.sql`, and `supabase/migrations/20260909170841_app_settings_payment_model.sql` in the Supabase SQL editor for **each** region project. `tuition_plans` stores India rates in INR and GCC rates in USD; the app loads the rows that match `Region`. Payment and admission amounts are numeric so prorata totals such as `0.83` can be stored. Superadmin **Settings** switches GCC between the current monthly checkout and Stripe subscriptions. India collects fees by UPI.
 
 Batches run a **fixed number of sessions per month** (8 for grades 1–9, 12 for 10–12). If a student joins after the month has started, checkout charges only the remaining scheduled classes on a prorata basis. From the next calendar month the full month is charged. Receipts show `Subject · Month · N classes`.
 
@@ -50,7 +50,7 @@ For local Stripe webhooks:
 stripe listen --forward-to localhost:5173/api/payments/webhook
 ```
 
-Then put the CLI webhook secret in `STRIPE_WEBHOOK_SECRET` and restart `npm run dev`. Successful GCC checkouts return to `/portal/students` and mark admission + class sessions paid automatically.
+Then put the CLI webhook secret in `STRIPE_WEBHOOK_SECRET` and restart `npm run dev`. Forward `checkout.session.completed` and `invoice.paid` (needed for Stripe subscriptions). Successful GCC checkouts return to `/portal/students` and mark admission + class sessions paid automatically.
 
 ## Setup
 

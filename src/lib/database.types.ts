@@ -101,6 +101,13 @@ export type Admission = {
   paid_at: string | null
 }
 
+export type AppSettings = {
+  id: number
+  payment_model: 'one_time' | 'subscription'
+  updated_at: string
+  updated_by: string | null
+}
+
 export type TuitionPaymentProvider = 'stripe' | 'razorpay' | 'manual'
 export type TuitionPaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled'
 
@@ -116,6 +123,7 @@ export type TuitionPayment = {
   renewal: boolean
   provider_session_id: string | null
   provider_payment_id: string | null
+  provider_subscription_id: string | null
   receipt_url: string | null
   coverage: Array<{
     subject: string
@@ -351,6 +359,19 @@ export type Database = {
         Update: {
           full_name?: string
           phone?: string | null
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: AppSettings
+        Insert: {
+          id?: number
+          payment_model?: AppSettings['payment_model']
+          updated_by?: string | null
+        }
+        Update: {
+          payment_model?: AppSettings['payment_model']
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -767,6 +788,7 @@ export type Database = {
           renewal?: boolean
           provider_session_id?: string | null
           provider_payment_id?: string | null
+          provider_subscription_id?: string | null
           receipt_url?: string | null
           paid_at?: string | null
         }
@@ -774,6 +796,7 @@ export type Database = {
           status?: TuitionPaymentStatus
           provider_session_id?: string | null
           provider_payment_id?: string | null
+          provider_subscription_id?: string | null
           receipt_url?: string | null
           coverage?: TuitionPayment['coverage']
           paid_at?: string | null

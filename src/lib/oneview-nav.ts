@@ -153,7 +153,7 @@ export const oneViewNavItems: OneViewNavItem[] = [
     label: 'Settings',
     path: '/oneview/settings',
     icon: Settings,
-    roles: ['superadmin', 'admin'],
+    roles: ['superadmin'],
   },
 ]
 

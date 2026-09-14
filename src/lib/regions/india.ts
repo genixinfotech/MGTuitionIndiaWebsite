@@ -226,8 +226,8 @@ export const indiaRegion: RegionBundle = {
       'International curricula grow — India hubs in Cherthala and Kottayam strengthen operations.',
     schedulingFlexNote:
       'Sessions that fit school, exams, and family life across Indian time zones.',
-    paymentUpiQr: '/images/payment-upi-qr.svg',
-    paymentUpiId: 'mgtuition@upi',
+    paymentUpiQr: '/images/payment-upi-qr.png',
+    paymentUpiId: 'idealmg@icici',
   },
   tuition: {
     batchSizeLabel: '6–8',
