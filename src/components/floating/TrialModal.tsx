@@ -13,6 +13,7 @@ import { FormSuccess } from '@/components/forms/FormSuccess'
 import { useCurriculum } from '@/hooks/useCurriculum'
 import { gradeLabelFromPlan } from '@/lib/curriculum'
 import { submitTrial } from '@/lib/email'
+import { trackFreeAssessmentConversion } from '@/lib/google-ads'
 import { site } from '@/lib/site'
 
 function emptyForm() {
@@ -123,6 +124,7 @@ export function TrialModal() {
         message: form.message || undefined,
         referral: referral || undefined,
       })
+      trackFreeAssessmentConversion()
       setStatus('done')
     } catch (err) {
       setStatus('idle')

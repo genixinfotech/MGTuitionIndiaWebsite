@@ -19,4 +19,6 @@ interface Window {
     paymentProvider?: 'stripe' | 'razorpay' | 'manual'
     cardCheckoutEnabled?: boolean
   }
+  gtag?: (...args: unknown[]) => void
+  dataLayer?: unknown[]
 }

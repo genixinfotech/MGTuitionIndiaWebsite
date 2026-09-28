@@ -6,6 +6,9 @@ async function bootstrap() {
   const { loadTuitionPlans } = await import('@/lib/tuition-plans')
   await loadTuitionPlans()
 
+  const { installGoogleAdsTag } = await import('@/lib/google-ads')
+  installGoogleAdsTag()
+
   const { StrictMode } = await import('react')
   const { createRoot } = await import('react-dom/client')
   const { default: App } = await import('./App.tsx')
