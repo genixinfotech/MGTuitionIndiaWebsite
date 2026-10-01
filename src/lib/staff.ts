@@ -10,8 +10,9 @@ type QualityManagerRow = {
 
 export async function listQualityManagers() {
   const { data, error } = await getSupabase()
-    .from('quality_managers')
-    .select('id, profiles ( id, full_name, email )')
+    .from('system_users')
+    .select('id, role, profiles ( id, full_name, email )')
+    .eq('role', 'quality-manager')
 
   if (error) throw new Error(error.message || 'Unable to load quality managers.')
 

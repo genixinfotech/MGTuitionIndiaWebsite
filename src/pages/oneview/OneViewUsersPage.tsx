@@ -6,8 +6,9 @@ import { OneViewPageHeader } from '@/components/oneview/OneViewPageHeader'
 import { OneViewPagination } from '@/components/oneview/OneViewPagination'
 import { usePagination } from '@/hooks/usePagination'
 import { matchesLetterFilter, type LetterFilter } from '@/lib/oneview-filters'
-import { creatableUserRoles, roleEntityTableLabel, roleLabel } from '@/lib/roles'
+import { catalogRoleLabel, listUserRoles, type UserRole } from '@/lib/user-roles'
 import { listUsers, userMatchesRoleFilter, type PortalUser } from '@/lib/users'
+import { roleEntityTableLabel } from '@/lib/roles'
 
 function formatWhen(value: string) {
   return new Date(value).toLocaleString('en-IN', {
@@ -17,14 +18,14 @@ function formatWhen(value: string) {
   })
 }
 
-const roleFilterOptions = [
+const fallbackRoleFilterOptions = [
   { value: 'all', label: 'All roles' },
   { value: 'internal', label: 'Internal team' },
-  ...creatableUserRoles.map((role) => ({ value: role, label: roleLabel(role) })),
 ]
 
 export function OneViewUsersPage() {
   const [users, setUsers] = useState<PortalUser[]>([])
+  const [roles, setRoles] = useState<UserRole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -33,13 +34,24 @@ export function OneViewUsersPage() {
   const [sort, setSort] = useState('newest')
   const [createOpen, setCreateOpen] = useState(false)
 
+  const roleFilterOptions = useMemo(
+    () => [
+      ...fallbackRoleFilterOptions,
+      ...roles.map((role) => ({ value: role.slug, label: role.label })),
+    ],
+    [roles],
+  )
+
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       try {
-        const rows = await listUsers()
-        if (!cancelled) setUsers(rows)
+        const [rows, roleRows] = await Promise.all([listUsers(), listUserRoles()])
+        if (!cancelled) {
+          setUsers(rows)
+          setRoles(roleRows)
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Unable to load users.')
@@ -62,7 +74,7 @@ export function OneViewUsersPage() {
       if (!matchesLetterFilter(row.full_name || row.email, letter)) return false
       if (!userMatchesRoleFilter(String(row.role), roleFilter)) return false
       if (!term) return true
-      const haystack = [row.full_name, row.email, row.phone, roleLabel(row.role)]
+      const haystack = [row.full_name, row.email, row.phone, catalogRoleLabel(row.role, roles)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -80,13 +92,13 @@ export function OneViewUsersPage() {
         return (b.full_name || b.email).localeCompare(a.full_name || a.email, 'en-IN')
       }
       if (sort === 'role-asc') {
-        return roleLabel(a.role).localeCompare(roleLabel(b.role), 'en-IN')
+        return catalogRoleLabel(a.role, roles).localeCompare(catalogRoleLabel(b.role, roles), 'en-IN')
       }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
     return rows
-  }, [letter, query, roleFilter, sort, users])
+  }, [letter, query, roleFilter, roles, sort, users])
 
   const pagination = usePagination(filtered, [query, letter, roleFilter, sort])
 
@@ -109,13 +121,9 @@ export function OneViewUsersPage() {
 
       <div className="rounded-2xl border border-charcoal/[0.06] bg-white px-6 py-5 md:px-8">
         <p className="max-w-3xl text-sm leading-relaxed text-charcoal/55">
-          Provision platform logins for internal team members, tutors, and parents. Each user gets an
-          auth account, a profile with the selected role, and a linked record in{' '}
-          <span className="font-medium text-charcoal">tutors</span>,{' '}
-          <span className="font-medium text-charcoal">quality managers</span>,{' '}
-          <span className="font-medium text-charcoal">student consultants</span>, or{' '}
-          <span className="font-medium text-charcoal">parents</span> when applicable. Students are
-          enrolled from Parents.
+          Provision platform logins for internal team members, tutors, and parents. Team roles are stored
+          in <span className="font-medium text-charcoal">system_users</span>. Tutors and parents keep
+          their own tables. Students are enrolled from Parents.
         </p>
       </div>
 
@@ -206,7 +214,7 @@ export function OneViewUsersPage() {
                     </td>
                     <td className="px-5 py-4">
                       <span className="inline-flex rounded-full bg-charcoal/[0.05] px-2.5 py-1 text-xs font-semibold text-charcoal/70">
-                        {roleLabel(row.role)}
+                        {catalogRoleLabel(row.role, roles)}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-charcoal/60">

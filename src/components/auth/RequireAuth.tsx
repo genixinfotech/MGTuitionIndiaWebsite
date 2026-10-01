@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { homePathForRole } from '@/lib/auth-paths'
-import { normalizeRole, type AppRole } from '@/lib/roles'
+import { normalizeRole, isInternalRole, type AppRole } from '@/lib/roles'
 
 export function AuthLoading() {
   return (
@@ -16,15 +16,20 @@ export function AuthLoading() {
 export function RequireAuth({
   children,
   roles,
+  internal,
 }: {
   children: ReactNode
   roles?: AppRole[]
+  internal?: boolean
 }) {
   const { user, loading } = useAuth()
 
   if (loading) return <AuthLoading />
   if (!user) return <Navigate to="/login" replace />
-  if (roles && !roles.includes(normalizeRole(user.role))) {
+  if (internal && !isInternalRole(user.role)) {
+    return <Navigate to={homePathForRole(user.role)} replace />
+  }
+  if (roles && !internal && !roles.includes(normalizeRole(user.role))) {
     return <Navigate to={homePathForRole(user.role)} replace />
   }
   return children

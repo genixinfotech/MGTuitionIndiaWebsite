@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { normalizeRole, type AppRole } from '@/lib/roles'
+import { isInternalRole, normalizeRole, type AppRole } from '@/lib/roles'
 
 export type DashboardNavSubItem = {
   id: string
@@ -24,10 +24,13 @@ export type DashboardNavConfig = {
   navSubItemForPath?: (pathname: string) => DashboardNavSubItem | undefined
 }
 
-export function visibleDashboardNav(role: AppRole | undefined, items: DashboardNavItem[]) {
+export function visibleDashboardNav(role: AppRole | string | undefined, items: DashboardNavItem[]) {
   const normalized = normalizeRole(role)
   if (normalized === 'superadmin') return items
-  return items.filter((item) => item.roles.includes(normalized))
+  return items.filter((item) => {
+    if (item.id === 'overview' && isInternalRole(role)) return true
+    return item.roles.includes(normalized)
+  })
 }
 
 export function createNavItemForPath(items: DashboardNavItem[], fallbackIndex = 0) {

@@ -9,7 +9,7 @@ export type Profile = {
   full_name: string
   email: string
   phone: string | null
-  role: AppRole
+  role: string
   created_at: string
   updated_at: string
 }
@@ -179,11 +179,14 @@ export type Tutor = {
   updated_at: string
 }
 
-export type QualityManager = {
+export type SystemUser = {
   id: string
+  role: string
   created_at: string
   updated_at: string
 }
+
+export type QualityManager = SystemUser
 
 export type Batch = {
   id: number
@@ -354,7 +357,7 @@ export type Database = {
           full_name?: string
           email: string
           phone?: string | null
-          role?: AppRole
+          role?: string
         }
         Update: {
           full_name?: string
@@ -372,6 +375,33 @@ export type Database = {
         Update: {
           payment_model?: AppSettings['payment_model']
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: number
+          slug: string
+          label: string
+          kind: 'account' | 'system'
+          locked: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          slug: string
+          label: string
+          kind?: 'account' | 'system'
+          locked?: boolean
+          sort_order?: number
+        }
+        Update: {
+          slug?: string
+          label?: string
+          kind?: 'account' | 'system'
+          locked?: boolean
+          sort_order?: number
         }
         Relationships: []
       }
@@ -429,12 +459,14 @@ export type Database = {
         }
         Relationships: []
       }
-      quality_managers: {
-        Row: QualityManager
+      system_users: {
+        Row: SystemUser
         Insert: {
           id: string
+          role: string
         }
         Update: {
+          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -478,15 +510,6 @@ export type Database = {
         }
         Relationships: []
       }
-      student_consultants: {
-        Row: StudentConsultant
-        Insert: {
-          id: string
-        }
-        Update: {
-          updated_at?: string
-        }
-        Relationships: []
       }
       grades: {
         Row: Grade

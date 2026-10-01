@@ -45,7 +45,6 @@ import { OneViewSettingsPage } from '@/pages/oneview/OneViewSettingsPage'
 import { OneViewUsersPage } from '@/pages/oneview/OneViewUsersPage'
 import { OneViewOperationsPage } from '@/pages/oneview/OneViewOperationsPage'
 import { OneViewOperationsBatchesPage } from '@/pages/oneview/OneViewOperationsBatchesPage'
-import { oneViewAccessRoles } from '@/lib/oneview-nav'
 
 export default function App() {
   useEffect(() => {
@@ -99,7 +98,7 @@ export default function App() {
             <Route
               path="/oneview"
               element={
-                <RequireAuth roles={[...oneViewAccessRoles]}>
+                <RequireAuth internal>
                   <OneViewLayout />
                 </RequireAuth>
               }

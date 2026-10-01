@@ -1,26 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
-import { normalizeRole } from './roles.mjs'
+import { dashedRole, normalizeRole } from './roles.mjs'
 
 const MAX_BODY_BYTES = 50_000
 
-const creatableRoles = [
-  'superadmin',
-  'admin',
-  'subject-expert',
-  'marketing-manager',
-  'hr-manager',
-  'accounts',
-  'quality-manager',
-  'student-consultant',
-  'tutor',
-  'parent',
-]
-
-const roleEntityTables = {
-  tutor: 'tutors',
-  parent: 'parents',
-  'quality-manager': 'quality_managers',
-  'student-consultant': 'student_consultants',
+function entityTableForRole(role) {
+  if (role === 'tutor') return 'tutors'
+  if (role === 'parent') return 'parents'
+  if (role === 'student') return null
+  return 'system_users'
 }
 
 function supabaseUrl(env) {
@@ -135,9 +122,9 @@ async function authenticateUserAdmin(req, env) {
   return { admin, callerRole }
 }
 
-function assertCanAssignRole(callerRole, targetRole) {
-  if (!creatableRoles.includes(targetRole)) {
-    const error = new Error('This role cannot be assigned from Users.')
+async function assertCanAssignRoleFromDb(admin, callerRole, targetRole) {
+  if (targetRole === 'student') {
+    const error = new Error('Students are enrolled from Parents, not Users.')
     error.status = 400
     throw error
   }
@@ -145,6 +132,18 @@ function assertCanAssignRole(callerRole, targetRole) {
     const error = new Error('Only a superadmin can create another superadmin.')
     error.status = 403
     throw error
+  }
+
+  const { data, error } = await admin.from('user_roles').select('slug').eq('slug', targetRole).maybeSingle()
+  if (error) {
+    const next = new Error(error.message || 'Unable to validate this user type.')
+    next.status = 500
+    throw next
+  }
+  if (!data) {
+    const next = new Error('Choose a user type from Settings.')
+    next.status = 400
+    throw next
   }
 }
 
@@ -180,10 +179,11 @@ async function checkEmailInUse(admin, email) {
 }
 
 async function syncRoleEntityRecord(admin, role, userId) {
-  const table = roleEntityTables[role]
+  const table = entityTableForRole(role)
   if (!table) return
 
-  const { error } = await admin.from(table).upsert({ id: userId }, { onConflict: 'id' })
+  const row = table === 'system_users' ? { id: userId, role } : { id: userId }
+  const { error } = await admin.from(table).upsert(row, { onConflict: 'id' })
   if (error) {
     const syncError = new Error(error.message || `Unable to save the ${table} record.`)
     syncError.status = 500
@@ -224,7 +224,7 @@ async function handleCreateUser(req, res, env) {
     const email = String(body.email || '').trim().toLowerCase()
     const phone = String(body.phone || '').trim()
     const password = String(body.password || '')
-    const role = normalizeRole(String(body.role || '').trim())
+    const role = dashedRole(String(body.role || '').trim())
 
     if (!fullName || !email || !password || !body.role) {
       json(res, 400, { error: 'Please fill in name, email, password, and role.' })
@@ -235,7 +235,7 @@ async function handleCreateUser(req, res, env) {
       return
     }
 
-    assertCanAssignRole(callerRole, role)
+    await assertCanAssignRoleFromDb(admin, callerRole, role)
 
     const emailCheck = await checkEmailInUse(admin, email)
     if (!emailCheck.available) {
@@ -301,7 +301,7 @@ async function handleCreateUser(req, res, env) {
     json(res, 200, {
       ok: true,
       user: profile,
-      entity_table: roleEntityTables[role] ?? null,
+      entity_table: entityTableForRole(role),
     })
   } catch (error) {
     json(res, error.status || 500, {

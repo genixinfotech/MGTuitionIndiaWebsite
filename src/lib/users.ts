@@ -1,6 +1,6 @@
 import { getSupabase } from '@/lib/supabase'
 import type { Profile } from '@/lib/database.types'
-import type { CreatableUserRole } from '@/lib/roles'
+import { isInternalRole, dashedRole } from '@/lib/roles'
 
 export type PortalUser = Pick<Profile, 'id' | 'full_name' | 'email' | 'phone' | 'role' | 'created_at' | 'updated_at'>
 
@@ -9,7 +9,7 @@ export type CreateUserInput = {
   email: string
   phone?: string
   password: string
-  role: CreatableUserRole
+  role: string
 }
 
 export async function listUsers() {
@@ -87,18 +87,8 @@ export async function createUser(input: CreateUserInput) {
 }
 
 export function userMatchesRoleFilter(role: string, filter: string) {
+  const dashed = dashedRole(role)
   if (filter === 'all') return true
-  if (filter === 'internal') {
-    return [
-      'superadmin',
-      'admin',
-      'subject-expert',
-      'marketing-manager',
-      'hr-manager',
-      'accounts',
-      'quality-manager',
-      'student-consultant',
-    ].includes(role)
-  }
-  return role === filter
+  if (filter === 'internal') return isInternalRole(role)
+  return dashed === filter
 }

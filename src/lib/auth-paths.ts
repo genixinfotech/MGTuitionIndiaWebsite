@@ -1,7 +1,6 @@
 import {
   isDashboardRole,
   isStudentConsultantRole,
-  normalizeRole,
   roleLabel,
   type AppRole,
 } from '@/lib/roles'
@@ -11,12 +10,10 @@ export { isDashboardRole, isStudentConsultantRole, roleLabel }
 export type { AppRole }
 
 export function homePathForRole(role?: string | null) {
-  const normalized = normalizeRole(role)
-  if (canAccessOneView(normalized)) {
-    if (isStudentConsultantRole(normalized)) return '/oneview/assessments/web'
+  if (canAccessOneView(role)) {
+    if (isStudentConsultantRole(role)) return '/oneview/assessments/web'
     return '/oneview'
   }
-  if (normalized === 'student') return '/portal'
   return '/portal'
 }
 

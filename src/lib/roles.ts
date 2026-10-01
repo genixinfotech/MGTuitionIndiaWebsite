@@ -43,28 +43,34 @@ export const roleLabels: Record<AppRole, string> = {
   parent: 'Parent',
 }
 
-const internalRoleSet = new Set<string>(internalRoles)
+const portalAccountRoles = new Set(['parent', 'tutor', 'student'])
 
 const legacyRoleMap: Record<string, AppRole> = {
-  staff: 'admin',
   student_consultant: 'student-consultant',
   hr: 'hr-manager',
 }
 
-export function normalizeRole(role?: string | null): AppRole {
+export function dashedRole(role?: string | null) {
   if (!role) return 'parent'
+  const dashed = role.replace(/_/g, '-')
   if (legacyRoleMap[role]) return legacyRoleMap[role]
-  if (appRoles.includes(role as AppRole)) return role as AppRole
+  if (legacyRoleMap[dashed]) return legacyRoleMap[dashed]
+  return dashed
+}
+
+export function normalizeRole(role?: string | null): AppRole {
+  const dashed = dashedRole(role)
+  if (appRoles.includes(dashed as AppRole)) return dashed as AppRole
   return 'parent'
 }
 
 export function isInternalRole(role?: string | null) {
-  const normalized = normalizeRole(role)
-  return internalRoleSet.has(normalized)
+  const dashed = dashedRole(role)
+  return Boolean(dashed) && !portalAccountRoles.has(dashed)
 }
 
 export function isStudentConsultantRole(role?: string | null) {
-  return normalizeRole(role) === 'student-consultant'
+  return dashedRole(role) === 'student-consultant'
 }
 
 export function isDashboardRole(role?: string | null) {
@@ -72,12 +78,17 @@ export function isDashboardRole(role?: string | null) {
 }
 
 export function canEnrolStudents(role?: string | null) {
-  const normalized = normalizeRole(role)
-  return normalized === 'parent' || isInternalRole(normalized)
+  return dashedRole(role) === 'parent' || isInternalRole(role)
 }
 
 export function roleLabel(role?: string | null) {
-  return roleLabels[normalizeRole(role)]
+  const dashed = dashedRole(role)
+  if (dashed in roleLabels) return roleLabels[dashed as AppRole]
+  return dashed
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
 /** Roles that can be assigned from OneView → Users (students use enrolment). */
@@ -96,16 +107,16 @@ export const creatableUserRoles = [
 
 export type CreatableUserRole = (typeof creatableUserRoles)[number]
 
-/** Dedicated entity table synced when a user is created with this role. */
-export const roleEntityTables: Partial<Record<AppRole, string>> = {
-  tutor: 'tutors',
-  parent: 'parents',
-  'quality-manager': 'quality_managers',
-  'student-consultant': 'student_consultants',
+export function roleEntityTable(role?: string | null) {
+  const dashed = dashedRole(role)
+  if (dashed === 'student') return null
+  if (dashed === 'tutor') return 'tutors'
+  if (dashed === 'parent') return 'parents'
+  return 'system_users'
 }
 
 export function roleEntityTableLabel(role?: string | null) {
-  const table = roleEntityTables[normalizeRole(role)]
+  const table = roleEntityTable(role)
   return table?.replace(/_/g, ' ') ?? null
 }
 

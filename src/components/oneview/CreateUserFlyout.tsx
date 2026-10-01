@@ -6,12 +6,13 @@ import { StudentLoginEmailField } from '@/components/enrolment/StudentLoginEmail
 import { FormField, fieldClass } from '@/components/forms/FormField'
 import { useAuth } from '@/context/AuthContext'
 import { useUserEmailCheck } from '@/hooks/useUserEmailCheck'
+import { roleEntityTableLabel } from '@/lib/roles'
 import {
-  creatableRolesForCaller,
-  roleEntityTableLabel,
-  roleLabel,
-  type CreatableUserRole,
-} from '@/lib/roles'
+  assignableUserRoles,
+  catalogRoleLabel,
+  listUserRoles,
+  type UserRole,
+} from '@/lib/user-roles'
 import { createUser } from '@/lib/users'
 import type { PortalUser } from '@/lib/users'
 
@@ -20,7 +21,7 @@ const emptyForm = {
   email: '',
   phone: '',
   password: '',
-  role: '' as CreatableUserRole | '',
+  role: '',
 }
 
 export function CreateUserFlyout({
@@ -37,11 +38,12 @@ export function CreateUserFlyout({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [roles, setRoles] = useState<UserRole[]>([])
   const emailCheck = useUserEmailCheck(form.email)
 
   const roleOptions = useMemo(
-    () => creatableRolesForCaller(caller?.role),
-    [caller?.role],
+    () => assignableUserRoles(roles, caller?.role),
+    [roles, caller?.role],
   )
 
   const entityTable = form.role ? roleEntityTableLabel(form.role) : null
@@ -51,12 +53,17 @@ export function CreateUserFlyout({
     setForm(emptyForm)
     setError('')
     setShowPassword(false)
+    void listUserRoles()
+      .then(setRoles)
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Unable to load user types.')
+      })
   }, [open])
 
   useEffect(() => {
     if (!open || form.role) return
     if (roleOptions.length > 0) {
-      setForm((current) => ({ ...current, role: roleOptions[0] }))
+      setForm((current) => ({ ...current, role: roleOptions[0].slug }))
     }
   }, [open, form.role, roleOptions])
 
@@ -143,7 +150,8 @@ export function CreateUserFlyout({
                   <h2 id="oneview-create-user-title">Create user</h2>
                 </div>
                 <p className="mt-1 text-sm text-charcoal/50">
-                  Creates auth login, profile, and the role&apos;s linked record when one exists.
+                  Creates an auth login, a profile, and a linked tutors, parents, or system_users
+                  record.
                 </p>
               </div>
               <button
@@ -167,13 +175,13 @@ export function CreateUserFlyout({
                     onChange={(event) =>
                       setForm((current) => ({
                         ...current,
-                        role: event.target.value as CreatableUserRole,
+                        role: event.target.value,
                       }))
                     }
                   >
                     {roleOptions.map((role) => (
-                      <option key={role} value={role}>
-                        {roleLabel(role)}
+                      <option key={role.slug} value={role.slug}>
+                        {catalogRoleLabel(role.slug, roles)}
                       </option>
                     ))}
                   </select>

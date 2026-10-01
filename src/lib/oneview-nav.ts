@@ -21,7 +21,7 @@ import {
   type DashboardNavSubItem,
   type DashboardNavItem,
 } from '@/lib/dashboard-nav'
-import { internalRoles, normalizeRole, type AppRole } from '@/lib/roles'
+import { dashedRole, isInternalRole, type AppRole } from '@/lib/roles'
 import { operationsModuleChildren } from '@/lib/operations-nav'
 
 export type OneViewNavSubItem = DashboardNavSubItem
@@ -157,23 +157,20 @@ export const oneViewNavItems: OneViewNavItem[] = [
   },
 ]
 
-/** Internal team roles with OneView access. */
-export const oneViewAccessRoles: AppRole[] = [...internalRoles]
-
+/** Internal team members have OneView access. */
 export function canAccessOneView(role?: string | null) {
-  const normalized = normalizeRole(role)
-  return oneViewAccessRoles.includes(normalized)
+  return isInternalRole(role)
 }
 
-export function canAccessOneViewNav(role: AppRole | undefined, item: OneViewNavItem) {
-  const normalized = normalizeRole(role)
-  if (normalized === 'superadmin') return true
-  return item.roles.includes(normalized)
+export function canAccessOneViewNav(role: string | undefined, item: OneViewNavItem) {
+  const dashed = dashedRole(role)
+  if (dashed === 'superadmin') return true
+  if (item.id === 'overview' && isInternalRole(role)) return true
+  return item.roles.includes(dashed as AppRole)
 }
 
 export function visibleOneViewNav(role?: string | null) {
-  const normalized = normalizeRole(role)
-  return oneViewNavItems.filter((item) => canAccessOneViewNav(normalized, item))
+  return oneViewNavItems.filter((item) => canAccessOneViewNav(dashedRole(role), item))
 }
 
 export function oneViewNavItemForPath(pathname: string) {

@@ -9,28 +9,34 @@ export const internalRoles = [
   'student-consultant',
 ]
 
-const internalRoleSet = new Set(internalRoles)
+const portalAccountRoles = new Set(['parent', 'tutor', 'student'])
 
 const legacyRoleMap = {
-  staff: 'admin',
   student_consultant: 'student-consultant',
   hr: 'hr-manager',
 }
 
-export function normalizeRole(role) {
+const appRoles = new Set(['parent', 'student', 'tutor', ...internalRoles])
+
+export function dashedRole(role) {
   if (!role) return 'parent'
+  const dashed = String(role).replace(/_/g, '-')
   if (legacyRoleMap[role]) return legacyRoleMap[role]
-  if (internalRoleSet.has(role) || role === 'parent' || role === 'student' || role === 'tutor') {
-    return role
-  }
+  if (legacyRoleMap[dashed]) return legacyRoleMap[dashed]
+  return dashed
+}
+
+export function normalizeRole(role) {
+  const dashed = dashedRole(role)
+  if (appRoles.has(dashed)) return dashed
   return 'parent'
 }
 
 export function isInternalRole(role) {
-  return internalRoleSet.has(normalizeRole(role))
+  const dashed = dashedRole(role)
+  return Boolean(dashed) && !portalAccountRoles.has(dashed)
 }
 
 export function canEnrolStudents(role) {
-  const normalized = normalizeRole(role)
-  return normalized === 'parent' || isInternalRole(normalized)
+  return dashedRole(role) === 'parent' || isInternalRole(role)
 }
