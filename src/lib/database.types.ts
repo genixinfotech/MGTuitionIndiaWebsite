@@ -510,7 +510,6 @@ export type Database = {
         }
         Relationships: []
       }
-      }
       grades: {
         Row: Grade
         Insert: {
